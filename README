@@ -1,0 +1,15 @@
+ DESCRIPTION:
+12309.php is advanced webshell with the main aim at executing shell commands in all possible ways. it has some additional functions though.
+
+ FEATURES:
+ - you could choose desired function to execute code with (+pcntl_exec +ssh2_exec)
+ - on old php versions (such as 5.1.6, 5.2.9) this script could bypass open_basedir and read other users` files (if you`re running it with webserver`s rights, i.e. kind of apache-mpm-prefork or -worker, not kind of -itk or -peruser).
+ - backconnect/bind port on PHP, Python, and "classic" perl and C backconnect/bind
+ - fully interactive backconnect on Python (yes, you can run even vim & mc via backconnect!)
+ - nice extra functions
+
+ LICENSE:
+3-clause BSD:
+http://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_.28.22New_BSD_License.22_or_.22Modified_BSD_License.22.29
+Copyright © 2010-2011, vk/12309, jabber: z12309@exploit.im, url: https://github.com/kairn/12309.php
+parts of code are licensed under GPLv2, BSD, WTFPL. if your religion forbids using one of these licenses, do not use this script.
