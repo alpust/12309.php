@@ -2,6 +2,7 @@
  - добавил больше инфы на страницу extras (posix_uname, posix_getuid, getmyuid, итд)
  - сделал для ctime/mtime/atime шрифт меньше. также поменял местами mtime и ctime в выводе директорий (первоначально я слажал и перепутал их)
  - в clear style сделал инфо о системе чёрного цвета
+ - @session_start
 
 
 22.02.2012 ver 2.0
